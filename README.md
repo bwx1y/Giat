@@ -33,5 +33,3 @@ Backend: PHP
 Database: PostgreSQL
 
 Tools & Libraries: HTML5-QRCode Scanner, Chart.js (Dashboard Analytics)
-
-testing
