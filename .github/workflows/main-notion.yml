@@ -34,26 +34,32 @@ jobs:
           script: |
             const eventName = process.env.EVENT_NAME;
             const prMerged = process.env.PR_MERGED === 'true';
-            
-            // Bersihkan token & database ID dari spasi / newline
+
+            // Bersihkan token & database ID
             const rawToken = (process.env.NOTION_TOKEN || "").trim();
             const rawDbId = (process.env.NOTION_DATABASE_ID || "").trim().replace(/[^a-zA-Z0-9]/g, "");
+
+            // LOGGING DEBUG: Pastikan ID tidak kosong
+            console.log(`Debug - Length Database ID: ${rawDbId.length}`);
+            if (!rawDbId) {
+              console.log("ERROR: NOTION_DATABASE_ID kosong! Pastikan secret tersimpan di Repository secrets.");
+              return;
+            }
 
             let targetText = "";
             let targetStatus = "";
 
             if (eventName === 'push') {
               targetText = process.env.COMMIT_MSG || "";
-              targetStatus = "In progress"; // Disesuaikan dengan pilihan di Notion kamu
+              targetStatus = "In progress";
             } else if (eventName === 'pull_request' && prMerged) {
               targetText = process.env.PR_TITLE || "";
-              targetStatus = "Done"; // Disesuaikan dengan pilihan di Notion kamu
+              targetStatus = "Done";
             } else {
               console.log("Abaikan event ini.");
               return;
             }
 
-            // Ekstrak ID dari awal pesan (Contoh: "16 - Agregasi Data")
             const match = targetText.match(/^(\d+)\s*[-:]?/);
             if (!match) {
               console.log("Tidak ditemukan ID Task di awal pesan: ", targetText);
@@ -61,9 +67,9 @@ jobs:
             }
 
             const taskId = parseInt(match[1]);
-            console.log(`Menemukan Task ID: ${taskId}, mencari di Notion Database: ${rawDbId}...`);
+            console.log(`Menemukan Task ID: ${taskId}, memanggil URL: https://api.notion.com/v1/databases/${rawDbId}/query`);
 
-            // Query ke Notion API menggunakan filter ID
+            // Query ke Notion API
             const response = await fetch(`https://api.notion.com/v1/databases/${rawDbId}/query`, {
               method: 'POST',
               headers: {
