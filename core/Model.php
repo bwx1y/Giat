@@ -10,6 +10,7 @@ abstract class Model
 {
     protected PDO $db;
     protected string $table;
+    protected string $primaryKey = 'id';
 
     /**
      * @throws Exception
@@ -37,7 +38,7 @@ abstract class Model
      */
     public function find(mixed $id): array|false
     {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE id = :id");
+        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE {$this->primaryKey} = :id");
         $stmt->execute(['id' => $id]);
         return $stmt->fetch();
     }
@@ -47,7 +48,7 @@ abstract class Model
      */
     public function delete(mixed $id): bool
     {
-        $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE id = :id");
+        $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE {$this->primaryKey} = :id");
         return $stmt->execute(['id' => $id]);
     }
 }
