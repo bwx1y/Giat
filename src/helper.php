@@ -1,5 +1,7 @@
 <?php
 
+include_once "JwtHelper.php";
+
 if (!function_exists('dd')) {
     /**
      * Dump response and die (JSON-friendly for API).

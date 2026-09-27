@@ -81,26 +81,55 @@ if (empty($segments)) {
 // 4. ROUTE MAPPER TO CONTROLLER
 // ==========================================
 // First segment after /api/ is the resource name (e.g., /api/user -> UserController)
-$resource = ucfirst($segments[0]);
-$controllerName = "controller\\" . $resource . "Controller";
-$idParam = $segments[1] ?? null;
+$baseDir = __DIR__ . '/controller';
+$namespaceParts = ['controller'];
+$remainingSegments = $segments;
+$idParam = null;
 
 // Check controller availability
+while (!empty($remainingSegments)) {
+    $current = $remainingSegments[0];
+
+    $testPath = $baseDir . '/' . $current;
+
+    if (is_dir($testPath)) {
+        $namespaceParts[] = $current;
+        $baseDir = $testPath;
+        array_shift($remainingSegments);
+    } else {
+        break;
+    }
+}
+
+if (!empty($remainingSegments)) {
+    $controllerSegment = array_shift($remainingSegments);
+    $namespaceParts[] = ucfirst($controllerSegment) . 'Controller';
+} else {
+    $namespaceParts[] = 'IndexController';
+}
+
+$controllerName = implode('\\', $namespaceParts);
+
+if (!empty($remainingSegments)) {
+    $idParam = array_shift($remainingSegments);
+    $_GET['id'] = $idParam;
+}
+
+$classFilePath = __DIR__ . '/' . str_replace('\\', '/', $controllerName) . '.php';
+
+if (file_exists($classFilePath)) {
+    require_once $classFilePath;
+}
+
 if (!class_exists($controllerName)) {
     http_response_code(404);
     echo json_encode([
         'status' => 404,
-        'message' => 'Endpoint not found'
+        'message' => "Endpoint not found: Class $controllerName standard file not found"
     ]);
     exit;
 }
 
-// Store ID parameter in $_GET if present
-if ($idParam !== null) {
-    $_GET['id'] = $idParam;
-}
-
-// Execute controller
 $controller = new $controllerName();
 
 if ($controller instanceof \controller\Controller) {

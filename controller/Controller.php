@@ -3,9 +3,13 @@
 namespace controller;
 
 use JetBrains\PhpStorm\NoReturn;
+use JwtHelper;
 
 abstract class Controller
 {
+    protected bool $authorization = false;
+    protected array $user = [];
+
     /**
      * Send a JSON response with an HTTP status code.
      */
@@ -50,12 +54,62 @@ abstract class Controller
     }
 
     /**
+     * validate authorization
+     */
+
+    private function authorize(): void
+    {
+        $headers = null;
+        if (isset($_SERVER['Authorization'])) {
+            $headers = trim($_SERVER["Authorization"]);
+        } elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $headers = trim($_SERVER["HTTP_AUTHORIZATION"]);
+        } elseif (function_exists('apache_request_headers')) {
+            $requestHeaders = apache_request_headers();
+            $requestHeaders = array_combine(
+                array_map('ucwords', array_keys($requestHeaders)),
+                array_values($requestHeaders)
+            );
+            if (isset($requestHeaders['Authorization'])) {
+                $headers = trim($requestHeaders['Authorization']);
+            }
+        }
+
+        if ($headers == null) {
+            $this->json(['error' => "Missing authorization header"], 401);
+        }
+
+        $token = null;
+        if (!empty($headers)) {
+            if (preg_match('/Bearer\s(\S+)/i', $headers, $matches)) {
+                $token = $matches[1];
+            }
+        }
+
+        if ($token == null) {
+            $this->json(['error' => "Missing authorization header"], 401);
+        }
+
+        $entity = JwtHelper::validateToken($token);
+
+        if (!$entity) {
+            $this->json(['error' => "Invalid authorization header"], 401);
+        }
+
+        $this->user = $entity;
+    }
+
+    /**
      * Handle incoming HTTP requests and dispatch them based on the HTTP method.
      */
     #[NoReturn]
     public function handleRequest(?string $id = null): void
     {
         $method = $_SERVER['REQUEST_METHOD'];
+
+        if ($this->authorization) {
+            $this->authorize();
+        }
 
         switch ($method) {
             case 'GET':
