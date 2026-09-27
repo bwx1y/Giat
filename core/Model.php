@@ -1,6 +1,6 @@
 <?php
 
-namespace model;
+namespace core;
 
 use config\Database;
 use Exception;

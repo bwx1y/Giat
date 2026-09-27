@@ -2,6 +2,7 @@
 
 namespace controller;
 
+use core\Request;
 use JetBrains\PhpStorm\NoReturn;
 use JwtHelper;
 
@@ -22,7 +23,7 @@ abstract class Controller
         if (is_array($data) && isset($data['error'])) {
             echo json_encode([
                 "status" => $statusCode,
-                "error" => $data['error']
+                "message" => $data['error']
             ]);
             exit;
         }
@@ -46,7 +47,7 @@ abstract class Controller
     /**
      * Parse and retrieve JSON payload from the request body.
      */
-    protected function getRequestBody(): array
+    private function getRequestBody(): array
     {
         $raw = file_get_contents('php://input');
         $data = json_decode($raw, true);
@@ -107,6 +108,9 @@ abstract class Controller
     {
         $method = $_SERVER['REQUEST_METHOD'];
 
+        $body = $this->getRequestBody();
+        $request = new Request($body);
+
         if ($this->authorization) {
             $this->authorize();
         }
@@ -116,14 +120,14 @@ abstract class Controller
                 $id ? $this->show($id) : $this->index();
                 break;
             case 'POST':
-                $this->store();
+                $this->store($request);
                 break;
             case 'PUT':
             case 'PATCH':
                 if (!$id) {
                     $this->json(['error' => 'ID parameter is required to update data'], 400);
                 }
-                $this->update($id);
+                $this->update($request, $id);
                 break;
             case 'DELETE':
                 if (!$id) {
@@ -151,13 +155,13 @@ abstract class Controller
     }
 
     #[NoReturn]
-    protected function store(): void
+    protected function store(Request $request): void
     {
         $this->json(['error' => 'Endpoint not found'], 404);
     }
 
     #[NoReturn]
-    protected function update(string $id): void
+    protected function update(Request $request, string $id): void
     {
         $this->json(['error' => 'Endpoint not found'], 404);
     }
