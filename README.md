@@ -1,35 +1,85 @@
-GIAT (Graha Informasi Aktivitas Terintegrasi) 🚀
+# GIAT (Graha Informasi Aktivitas Terintegrasi)
 
 Sistem Informasi Keaktifan Organisasi Mahasiswa Berbasis Web untuk memantau, mengelola, dan meningkatkan partisipasi anggota secara transparan, akuntabel, dan terintegrasi.
 
-📌 Latar Belakang
+## Latar Belakang
 
-Banyak program kerja di organisasi kemahasiswaan tidak berjalan secara optimal akibat minimnya partisipasi anggota dan sulitnya pemantauan keaktifan secara konsisten oleh pengurus. GIAT hadir sebagai solusi digital berbasis web yang mengubah proses pemantauan manual menjadi sistem otomatis berbasis data (data-driven decision making).
+Banyak program kerja di organisasi kemahasiswaan tidak berjalan optimal akibat minimnya partisipasi anggota dan sulitnya pemantauan keaktifan secara konsisten. GIAT hadir sebagai solusi digital berbasis web untuk mentransformasi presensi manual menjadi sistem otomatis berbasis data (*data-driven decision making*).
 
-✨ Fitur Utama
+## Fitur Utama
 
-📱 Presensi QR Code Otomatis: Pencatatan kehadiran rapat dan kegiatan secara cepat, presisi, dan terverifikasi.
+- **Presensi QR Code Otomatis**: Pencatatan kehadiran rapat dan kegiatan secara cepat, presisi, dan terverifikasi.
+- **Presensi Manual Admin**: Mekanisme cadangan (*fallback*) penanganan kendala teknis perangkat di lapangan.
+- **Gamifikasi & Sistem Poin**:
+  - `+3 poin` per kehadiran rapat/kegiatan.
+  - `-1 poin` per ketidakhadiran (*absensi*).
+- **Papan Leaderboard**: Peringkat keaktifan anggota secara *real-time*.
+- **Integrasi Syarat Sertifikat**: Akumulasi poin sebagai prasyarat klaim sertifikat kepengurusan.
+- **Dashboard Manajerial**: Panel analitik pengurus untuk pengambilan keputusan.
 
-🛠️ Presensi Manual Admin: Mekanisme cadangan (fallback) bagi pengurus untuk menangani kendala teknis perangkat di lapangan.
+## Stack Teknologi
 
-🎮 Gamifikasi & Sistem Poin: Mendorong budaya aktif melalui kalkulasi poin otomatis:
+- **Backend**: Native PHP 8.5+ (arsitektur micro-framework tanpa dependency eksternal)
+- **Database**: PostgreSQL (koneksi via PDO `pdo_pgsql`)
+- **Frontend**: HTML5, CSS3, JavaScript (Bootstrap, Chart.js, HTML5-QRCode Scanner)
+- **Autentikasi**: JSON Web Token (JWT) HS256
 
-+3 poin untuk setiap kehadiran rapat/kegiatan.
+## Prasyarat Sistem
 
--1 poin untuk setiap ketidakhadiran (absensi).
+- **PHP 8.5+** (wajib mendukung operator pipa `|>`)
+- Ekstensi PHP: `pdo`, `pdo_pgsql`
+- Server PostgreSQL aktif
 
-🏆 Papan Leaderboard: Visualisasi peringkat keaktifan anggota secara real-time untuk membangun kompetisi yang sehat.
+## Panduan Instalasi & Menjalankan Server
 
-📜 Integrasi Syarat Sertifikat: Akumulasi poin dijadikan syarat utama klaim sertifikat kepengurusan di akhir periode.
+1. **Clone repository**:
+   ```bash
+   git clone <repo_url>
+   cd Giat
+   ```
 
-📊 Dashboard Manajerial: Panel kontrol terpusat bagi pengurus untuk menganalisis keaktifan anggota dan mengambil keputusan berbasis data valid.
+2. **Konfigurasi Environment**:
+   Salin file konfigurasi contoh:
+   ```bash
+   cp .env.example .env
+   ```
+   Sesuaikan parameter pada `.env`:
+   ```env
+   JWT_SECRET=rahasia_jwt_anda
+   DB_HOST=127.0.0.1
+   DB_PORT=5432
+   DB_NAME=pbl_db
+   DB_USER=postgres
+   DB_PASS=password_anda
+   ```
 
-🛠️ Stack Teknologi
+3. **Jalankan Server Lokal**:
+   ```bash
+   php -S localhost:8080 index.php
+   ```
 
-Frontend: HTML5, CSS3, JavaScript (Bootstrap)
+4. **Verifikasi API**:
+   Akses root endpoint:
+   ```bash
+   curl http://localhost:8080/api
+   ```
+   Output: `{"status":200,"message":"API server is online"}`
 
-Backend: PHP
+## Struktur Endpoint API
 
-Database: PostgreSQL
+Semua rute wajib diawali prefix `/api/`.
 
-Tools & Libraries: HTML5-QRCode Scanner, Chart.js (Dashboard Analytics)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| `GET` | `/api` | Publik | Cek status server API |
+| `POST` | `/api/auth/login` | Publik | Autentikasi user & generate JWT |
+| `GET` | `/api/profile` | Bearer Token (`*`) | Data profil user yang sedang login |
+
+## Konvensi Commit & CI/CD
+
+Repository ini terintegrasi dengan GitHub Actions untuk sinkronisasi otomatis status task di Notion. Setiap commit pada branch kerja wajib diawali dengan ID Task:
+```bash
+git commit -m "<task_id> - <pesan_commit>"
+# Contoh:
+git commit -m "8 - add profile controller"
+```
