@@ -43,6 +43,8 @@ class ProfileController extends Controller
             'username' => 'required',
         ]);
 
+
+
         $userId = $this->user['id'];
         $entity = $this->userModel->findById($userId);
 
