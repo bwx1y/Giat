@@ -1,0 +1,76 @@
+# ==========================================
+# OpenCode & AI Assistant Tools
+# ==========================================
+# Mengabaikan konfigurasi lokal, cache, dan riwayat percakapan OpenCode
+.opencode/
+.opencode/*
+!.opencode/config.json    # Simpan jika file config ini digunakan bersama tim
+*.opencode
+.opencode_history/
+.opencode_cache/
+
+# ==========================================
+# Grapify / Graph & Schema Generation Output
+# ==========================================
+# Mengabaikan cache visualisasi dan log temporary Grapify
+.grapify/
+grapify-cache/
+*.grapify.log
+*.grapify.json            # Hapus baris ini jika file JSON skema Grapify ingin di-push
+grapify-output/
+graphify-out/
+
+# ==========================================
+# Environment & Secret Credentials
+# ==========================================
+# Mencegah kredensial database & API Key OpenCode/AI bocor
+.env
+.env.local
+.env.*.local
+*.env
+*.pem
+*.key
+
+# ==========================================
+# PHP & Composer Dependencies
+# ==========================================
+# Mengabaikan folder dependency vendor dan file eksekusi Composer
+/vendor/
+composer.phar
+composer.lock             # Catatan: Hapus baris ini jika kamu membangun aplikasi/proyek akhir (bukan package)
+
+# ==========================================
+# Framework PHP (Laravel / CodeIgniter / Symfony)
+# ==========================================
+# Cache, Log, dan Session Aplikasi PHP
+/storage/*.key
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*
+/bootstrap/cache/
+/writable/                # Untuk CodeIgniter 4 (logs, cache, session)
+
+# ==========================================
+# PHP Tools & Profiling
+# ==========================================
+# File cache PHPUnit, PHP CS Fixer, & profiler (Xdebug/Blackfire)
+.phpunit.result.cache
+.php-cs-fixer.cache
+.php-cs-fixer.dist.cache
+*.cache
+*.phpt
+xdebug-*.out
+
+# ==========================================
+# IDEs & System Files
+# ==========================================
+# VS Code, PhpStorm / JetBrains, & OS Files
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.DS_Store
+Thumbs.db
