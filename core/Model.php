@@ -44,6 +44,86 @@ abstract class Model
     }
 
     /**
+     * Saves new data to the database and returns the newly created entity.
+     *
+     * @param array<string, mixed> $data Column => value pair data
+     * @return array|object|null Returns the newly created entity, or null on failure
+     */
+    public function create(array $data): array|object|null
+    {
+        if (empty($data)) {
+            return null;
+        }
+
+        $columns = array_keys($data);
+
+        $escapedColumns = array_map(fn($col) => "`{$col}`", $columns);
+        $columnClause = implode(', ', $escapedColumns);
+
+        $placeholders = array_map(fn($col) => ":{$col}", $columns);
+        $placeholderClause = implode(', ', $placeholders);
+
+        $params = [];
+        foreach ($data as $key => $value) {
+            $params[":{$key}"] = $value;
+        }
+
+        $sql = "INSERT INTO {$this->table} ({$columnClause}) VALUES ({$placeholderClause})";
+        $stmt = $this->db->prepare($sql);
+        $success = $stmt->execute($params);
+
+        if (!$success) {
+            return null;
+        }
+
+        $lastInsertId = $this->db->lastInsertId();
+
+        if ($lastInsertId) {
+            return $this->findById($lastInsertId);
+        }
+
+        if (isset($data[$this->primaryKey])) {
+            return $this->findById($data[$this->primaryKey]);
+        }
+
+        return null;
+    }
+
+    /**
+     * Updates data based on the primary key and returns the updated entity.
+     *
+     * @param int|string $id ID of the record to be updated
+     * @param array<string, mixed> $data Column => value pairs
+     * @return array|object|null Returns the updated entity, or null on failure
+     */
+    public function update(int|string $id, array $data): array|object|null
+    {
+        if (empty($data)) {
+            return $this->findById($id);
+        }
+
+        $fields = [];
+        $params = [':id' => $id];
+
+        foreach ($data as $key => $value) {
+            $fields[] = "`{$key}` = :{$key}";
+            $params[":{$key}"] = $value;
+        }
+
+        $setClause = implode(', ', $fields);
+        $sql = "UPDATE {$this->table} SET {$setClause} WHERE {$this->primaryKey} = :id";
+
+        $stmt = $this->db->prepare($sql);
+        $success = $stmt->execute($params);
+
+        if (!$success) {
+            return null;
+        }
+
+        return $this->findById($id);
+    }
+
+    /**
      * Delete a record by ID.
      */
     public function delete(mixed $id): bool
