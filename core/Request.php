@@ -25,7 +25,7 @@ class Request
 
         foreach ($rules as $field => $ruleString) {
             $rulesArray = explode('|', $ruleString);
-            $value = $this->data[$field] ?? null;
+            $value = $this->vars[$field] ?? null;
 
             foreach ($rulesArray as $rule) {
                 $param = null;
@@ -34,7 +34,10 @@ class Request
                 }
 
                 if ($rule === 'required' && (empty($value) && $value !== '0' && $value !== 0)) {
-                    $errors[$field] = "The {$field} field is required.";
+                    $errors[] = [
+                        'field'   => $field,
+                        'message' => "The {$field} field is required."
+                    ];
                     break;
                 }
 
@@ -43,11 +46,17 @@ class Request
                 }
 
                 if ($rule === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
-                    $errors[$field] = "The {$field} must be a valid email address.";
+                    $errors[] = [
+                        'field'   => $field,
+                        'message' => "The {$field} must be a valid email address."
+                    ];
                 }
 
                 if ($rule === 'min' && strlen((string)$value) < (int)$param) {
-                    $errors[$field] = "The {$field} must be at least {$param} characters.";
+                    $errors[] = [
+                        'field'   => $field,
+                        'message' => "The {$field} must be at least {$param} characters."
+                    ];
                 }
             }
         }
