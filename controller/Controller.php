@@ -8,7 +8,16 @@ use JwtHelper;
 
 abstract class Controller
 {
-    protected bool $authorization = false;
+    /**
+     * Role-based authorization configuration for this component/controller.
+     *
+     * - `['*']`      : Authorizes ALL roles (public/unrestricted access within the auth context).
+     * - `['Admin']`  : Restricts authorization strictly to the specified role(s).
+     * - `null`       : Disables authorization check or applies default global fallback behavior.
+     *
+     * @var array<string>|null
+     */
+    protected array|null $authorization = null;
     protected array $user = [];
 
     /**
@@ -93,8 +102,15 @@ abstract class Controller
 
         $entity = JwtHelper::validateToken($token);
 
-        if (!$entity) {
-            $this->json(['error' => "Invalid authorization header"], 401);
+        if (in_array('*', $this->authorization, true)) {
+            $this->user = $entity;
+            return;
+        }
+
+        $userRole = $entity['role'] ?? null;
+
+        if (!in_array($userRole, $this->authorization, true)) {
+            $this->json(['error' => 'Forbidden: You do not have permission to access this resource'], 403);
         }
 
         $this->user = $entity;
