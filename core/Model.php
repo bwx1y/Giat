@@ -27,7 +27,7 @@ abstract class Model
     /**
      * Fetch all records from the table.
      */
-    public function all(): array
+    public function findAll(): array
     {
         $stmt = $this->db->query("SELECT * FROM {$this->table}");
         return $stmt->fetchAll();
@@ -36,7 +36,7 @@ abstract class Model
     /**
      * Find a single record by primary key (ID).
      */
-    public function find(mixed $id): array|false
+    public function findById(mixed $id): array|false
     {
         $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE {$this->primaryKey} = :id");
         $stmt->execute(['id' => $id]);
