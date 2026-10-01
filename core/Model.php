@@ -57,7 +57,7 @@ abstract class Model
 
         $columns = array_keys($data);
 
-        $escapedColumns = array_map(fn($col) => "`{$col}`", $columns);
+        $escapedColumns = array_map(fn($col) => "\"{$col}\"", $columns);
         $columnClause = implode(', ', $escapedColumns);
 
         $placeholders = array_map(fn($col) => ":{$col}", $columns);
@@ -68,7 +68,8 @@ abstract class Model
             $params[":{$key}"] = $value;
         }
 
-        $sql = "INSERT INTO {$this->table} ({$columnClause}) VALUES ({$placeholderClause})";
+        $sql = "INSERT INTO \"{$this->table}\" ({$columnClause}) VALUES ({$placeholderClause}) RETURNING *";
+
         $stmt = $this->db->prepare($sql);
         $success = $stmt->execute($params);
 
@@ -76,17 +77,7 @@ abstract class Model
             return null;
         }
 
-        $lastInsertId = $this->db->lastInsertId();
-
-        if ($lastInsertId) {
-            return $this->findById($lastInsertId);
-        }
-
-        if (isset($data[$this->primaryKey])) {
-            return $this->findById($data[$this->primaryKey]);
-        }
-
-        return null;
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
     /**
@@ -96,22 +87,23 @@ abstract class Model
      * @param array<string, mixed> $data Column => value pairs
      * @return array|object|null Returns the updated entity, or null on failure
      */
-    public function update(int|string $id, array $data): array|object|null
+    public function update(int|string $id, array$data): array|object|null
     {
         if (empty($data)) {
             return $this->findById($id);
         }
 
         $fields = [];
-        $params = [':id' => $id];
+        $params = [':id' =>$id];
 
-        foreach ($data as $key => $value) {
-            $fields[] = "`{$key}` = :{$key}";
+        foreach ($data as $key =>$value) {
+            $fields[] = "\"{$key}\" = :{$key}";
             $params[":{$key}"] = $value;
         }
 
         $setClause = implode(', ', $fields);
-        $sql = "UPDATE {$this->table} SET {$setClause} WHERE {$this->primaryKey} = :id";
+
+        $sql = "UPDATE \"{$this->table}\" SET {$setClause} WHERE \"{$this->primaryKey}\" = :id RETURNING *";
 
         $stmt = $this->db->prepare($sql);
         $success = $stmt->execute($params);
@@ -120,7 +112,7 @@ abstract class Model
             return null;
         }
 
-        return $this->findById($id);
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
     /**
