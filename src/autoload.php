@@ -8,12 +8,14 @@ if (file_exists($envFile)) {
         if ($line === '' || str_starts_with($line, '#')) continue;
         if (str_contains($line, '=')) {
             list($name, $value) = explode('=', $line, 2);
-            $name = trim($name);
+            $name  = trim($name);
             $value = trim($value, " \t\n\r\0\x0B\"'");
-            putenv("$name=$value");
-            $_ENV[$name] = $value;
-            $_SERVER[$name] = $value;
+
+            if (getenv($name) === false) {
+                putenv("$name=$value");
+                $_ENV[$name] = $value;
+                $_SERVER[$name] = $value;
+            }
         }
     }
 }
-

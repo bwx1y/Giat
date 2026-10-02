@@ -58,9 +58,24 @@ abstract class Controller
      */
     private function getRequestBody(): array
     {
-        $raw = file_get_contents('php://input');
-        $data = json_decode($raw, true);
-        return is_array($data) ? $data : [];
+        $rawInput = $_SERVER['RAW_REQUEST_BODY'] ?? file_get_contents('php://input');
+
+        if (empty($rawInput)) {
+            return $_POST;
+        }
+
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
+        if (str_contains($contentType, 'application/json')) {
+            $data = json_json_decode($rawInput, true);
+            return is_array($data) ? $data : [];
+        }
+
+        if (in_array($_SERVER['REQUEST_METHOD'], ['PUT', 'PATCH', 'DELETE'])) {
+            parse_str($rawInput, $parsedData);
+            return is_array($parsedData) ? $parsedData : [];
+        }
+
+        return $_POST;
     }
 
     /**

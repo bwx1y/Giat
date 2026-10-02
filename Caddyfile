@@ -1,0 +1,15 @@
+{
+    # Mengaktifkan modul FrankenPHP
+    frankenphp
+}
+
+:8080 {
+    # Root folder aplikasi
+    root * /app
+
+    # Mengirim seluruh request PHP ke Worker Mode
+    # Angka 4 di akhir menandakan jumlah worker process
+    php_server {
+        worker /app/worker.php 4
+    }
+}
