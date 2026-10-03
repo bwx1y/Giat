@@ -20,6 +20,7 @@ abstract class Controller
      */
     protected array|null $authorization = null;
     protected array $user = [];
+    private array $page = [];
 
     /**
      * Send a JSON response with an HTTP status code.
@@ -38,8 +39,24 @@ abstract class Controller
             exit;
         }
 
-        echo json_encode(["status" => $statusCode, "data" => $data]);
+        $response = [["status" => $statusCode, "data" => $data]];
+        if (!empty($this->page)) {
+            $response["meta"] = [
+                'hasNext' => $this->page['hasNext'] ?? false,
+                'next' => $this->page['next'] ?? null,
+            ];
+        }
+
+        echo json_encode($response);
         exit;
+    }
+
+    protected function setNextPage(int|null $page): void
+    {
+        $this->page = [
+            'hasNext' => (bool)$page,
+            'next' => $page ?? null,
+        ];
     }
 
     /**
@@ -184,7 +201,7 @@ abstract class Controller
     #[NoReturn]
     protected function show(string $id): void
     {
-        (void) $id;
+        (void)$id;
 
         $this->json(['error' => 'Endpoint not found'], 404);
     }
@@ -192,15 +209,15 @@ abstract class Controller
     #[NoReturn]
     protected function store(Request $request): void
     {
-        (void) $request;
+        (void)$request;
         $this->json(['error' => 'Endpoint not found'], 404);
     }
 
     #[NoReturn]
     protected function update(Request $request, string $id): void
     {
-        (void) $request;
-        (void) $id;
+        (void)$request;
+        (void)$id;
 
         $this->json(['error' => 'Endpoint not found'], 404);
     }
@@ -209,7 +226,7 @@ abstract class Controller
     #[NoReturn]
     protected function destroy(string $id): void
     {
-        (void) $id;
+        (void)$id;
 
         $this->json(['error' => 'Endpoint not found'], 404);
     }
