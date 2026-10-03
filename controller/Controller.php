@@ -5,6 +5,7 @@ namespace controller;
 use core\Request;
 use JetBrains\PhpStorm\NoReturn;
 use JwtHelper;
+use Throwable;
 
 abstract class Controller
 {
@@ -19,6 +20,7 @@ abstract class Controller
      */
     protected array|null $authorization = null;
     protected array $user = [];
+    private array $page = [];
 
     /**
      * Send a JSON response with an HTTP status code.
@@ -37,8 +39,24 @@ abstract class Controller
             exit;
         }
 
-        echo json_encode(["status" => $statusCode, "data" => $data]);
+        $response = [["status" => $statusCode, "data" => $data]];
+        if (!empty($this->page)) {
+            $response["meta"] = [
+                'hasNext' => $this->page['hasNext'] ?? false,
+                'next' => $this->page['next'] ?? null,
+            ];
+        }
+
+        echo json_encode($response);
         exit;
+    }
+
+    protected function setNextPage(int|null $page): void
+    {
+        $this->page = [
+            'hasNext' => (bool)$page,
+            'next' => $page ?? null,
+        ];
     }
 
     /**
@@ -58,9 +76,24 @@ abstract class Controller
      */
     private function getRequestBody(): array
     {
-        $raw = file_get_contents('php://input');
-        $data = json_decode($raw, true);
-        return is_array($data) ? $data : [];
+        $rawInput = $_SERVER['RAW_REQUEST_BODY'] ?? file_get_contents('php://input');
+
+        if (empty($rawInput)) {
+            return $_POST;
+        }
+
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
+        if (str_contains($contentType, 'application/json')) {
+            $data = json_decode($rawInput, true);
+            return is_array($data) ? $data : [];
+        }
+
+        if (in_array($_SERVER['REQUEST_METHOD'], ['PUT', 'PATCH', 'DELETE'])) {
+            parse_str($rawInput, $parsedData);
+            return is_array($parsedData) ? $parsedData : [];
+        }
+
+        return $_POST;
     }
 
     /**
@@ -70,37 +103,44 @@ abstract class Controller
     private function authorize(): void
     {
         $headers = null;
-        if (isset($_SERVER['Authorization'])) {
-            $headers = trim($_SERVER["Authorization"]);
-        } elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) {
-            $headers = trim($_SERVER["HTTP_AUTHORIZATION"]);
-        } elseif (function_exists('apache_request_headers')) {
-            $requestHeaders = apache_request_headers();
-            $requestHeaders = array_combine(
-                array_map('ucwords', array_keys($requestHeaders)),
-                array_values($requestHeaders)
-            );
-            if (isset($requestHeaders['Authorization'])) {
-                $headers = trim($requestHeaders['Authorization']);
+
+        if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
+            $headers = trim($_SERVER['HTTP_AUTHORIZATION']);
+        } elseif (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+            $headers = trim($_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
+        } elseif (!empty($_SERVER['Authorization'])) {
+            $headers = trim($_SERVER['Authorization']);
+        } elseif (function_exists('getallheaders')) {
+            $allHeaders = getallheaders();
+            if (!empty($allHeaders['Authorization'])) {
+                $headers = trim($allHeaders['Authorization']);
+            } elseif (!empty($allHeaders['authorization'])) {
+                $headers = trim($allHeaders['authorization']);
             }
         }
 
-        if ($headers == null) {
-            $this->json(['error' => "Missing authorization header"], 401);
+        if (empty($headers)) {
+            $this->json(['error' => 'Missing authorization header'], 401);
         }
 
         $token = null;
-        if (!empty($headers)) {
-            if (preg_match('/Bearer\s(\S+)/i', $headers, $matches)) {
-                $token = $matches[1];
-            }
+        if (preg_match('/Bearer\s+(\S+)/i', $headers, $matches)) {
+            $token = $matches[1];
         }
 
-        if ($token == null) {
-            $this->json(['error' => "Missing authorization header"], 401);
+        if (empty($token)) {
+            $this->json(['error' => 'Invalid or missing Bearer token'], 401);
         }
 
-        $entity = JwtHelper::validateToken($token);
+        try {
+            $entity = JwtHelper::validateToken($token);
+        } catch (Throwable $e) {
+            $this->json(['error' => 'Unauthorized: ' . $e->getMessage()], 401);
+        }
+
+        if (!$entity) {
+            $this->json(['error' => 'Unauthorized: Token is invalid or expired'], 401);
+        }
 
         if (in_array('*', $this->authorization, true)) {
             $this->user = $entity;
@@ -108,7 +148,6 @@ abstract class Controller
         }
 
         $userRole = $entity['role'] ?? null;
-
         if (!in_array($userRole, $this->authorization, true)) {
             $this->json(['error' => 'Forbidden: You do not have permission to access this resource'], 403);
         }
@@ -134,26 +173,21 @@ abstract class Controller
         switch ($method) {
             case 'GET':
                 $id ? $this->show($id) : $this->index();
-                break;
             case 'POST':
                 $this->store($request);
-                break;
             case 'PUT':
             case 'PATCH':
                 if (!$id) {
                     $this->json(['error' => 'ID parameter is required to update data'], 400);
                 }
                 $this->update($request, $id);
-                break;
             case 'DELETE':
                 if (!$id) {
                     $this->json(['error' => 'ID parameter is required to delete data'], 400);
                 }
                 $this->destroy($id);
-                break;
             default:
                 $this->json(['error' => 'Method Not Allowed'], 405);
-                break;
         }
     }
 
@@ -167,24 +201,33 @@ abstract class Controller
     #[NoReturn]
     protected function show(string $id): void
     {
+        (void)$id;
+
         $this->json(['error' => 'Endpoint not found'], 404);
     }
 
     #[NoReturn]
     protected function store(Request $request): void
     {
+        (void)$request;
         $this->json(['error' => 'Endpoint not found'], 404);
     }
 
     #[NoReturn]
     protected function update(Request $request, string $id): void
     {
+        (void)$request;
+        (void)$id;
+
         $this->json(['error' => 'Endpoint not found'], 404);
     }
+
 
     #[NoReturn]
     protected function destroy(string $id): void
     {
+        (void)$id;
+
         $this->json(['error' => 'Endpoint not found'], 404);
     }
 }

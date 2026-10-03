@@ -53,12 +53,26 @@ Banyak program kerja di organisasi kemahasiswaan tidak berjalan optimal akibat m
    DB_PASS=password_anda
    ```
 
-3. **Jalankan Server Lokal**:
+3. **Jalankan Migrasi Database**:
    ```bash
-   php -S localhost:8080 index.php
+   php migrate up
    ```
+   *Perintah migrasi lain:*
+   - `php migrate down` : Rollback migrasi terakhir.
+   - `php migrate create <nama>` : Buat file migrasi baru.
 
-4. **Verifikasi API**:
+4. **Jalankan Server**:
+   - **PHP CLI Server (Development)**:
+     ```bash
+     php -S localhost:8080 index.php
+     ```
+   - **FrankenPHP (Worker Mode / Production)**:
+     ```bash
+     docker build -t giat .
+     docker run -e FRANKENPHP_CONFIG="worker /app/worker.php" -p 8080:8080 giat
+     ```
+
+5. **Verifikasi API**:
    Akses root endpoint:
    ```bash
    curl http://localhost:8080/api
@@ -74,6 +88,7 @@ Semua rute wajib diawali prefix `/api/`.
 | `GET` | `/api` | Publik | Cek status server API |
 | `POST` | `/api/auth/login` | Publik | Autentikasi user & generate JWT |
 | `GET` | `/api/profile` | Bearer Token (`*`) | Data profil user yang sedang login |
+| `POST` | `/api/profile` | Bearer Token (`*`) | Perbarui profil user yang sedang login |
 
 ## Konvensi Commit & CI/CD
 

@@ -1,0 +1,37 @@
+# Git
+.git
+.gitignore
+.github
+
+# Docker & Compose files
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# IDEs & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+
+# Temporary & Log files
+*.log
+logs/
+tmp/
+cache/
+
+# Environment / Secret files
+.env
+.env.*
+!.env.example
+
+# Composer / Dependencies (jika pakai vendor & ingin composer install saat build)
+# Un-comment baris di bawah jika kamu melakukan composer install di dalam Dockerfile
+# vendor/
+
+# Documentation / Markdown
+*.md
+README*

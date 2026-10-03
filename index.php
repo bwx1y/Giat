@@ -1,24 +1,6 @@
 <?php
-// ==========================================
-// 1. LOAD ENV
-// ==========================================
-// Load environment variables from .env file
-$envFile = __DIR__ . '/.env';
-if (file_exists($envFile)) {
-    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        $line = trim($line);
-        if ($line === '' || str_starts_with($line, '#')) continue;
-        if (str_contains($line, '=')) {
-            list($name, $value) = explode('=', $line, 2);
-            $name = trim($name);
-            $value = trim($value, " \t\n\r\0\x0B\"'");
-            putenv("$name=$value");
-            $_ENV[$name] = $value;
-            $_SERVER[$name] = $value;
-        }
-    }
-}
+require_once __DIR__ . '/src/autoload.php';
+require_once __DIR__ . '/src/cors.php';
 
 // set header
 header('Content-Type: application/json');
@@ -55,12 +37,40 @@ $segments = explode('/', $uri)
         |> array_filter(...)
         |> array_values(...);
 
+if (!empty($segments) && $segments[0] === 'docs') {
+    if ($_ENV['MODE'] === 'development') {
+
+        if (isset($segments[1]) && $segments[1] === 'schema.yaml') {
+            $schemaPath = __DIR__ . '/document/schema.yaml';
+            if (file_exists($schemaPath)) {
+                header('Content-Type: text/yaml');
+                readfile($schemaPath);
+                exit;
+            }
+        }
+
+        $indexPath = __DIR__ . '/document/index.html';
+        if (file_exists($indexPath)) {
+            header('Content-Type: text/html; charset=utf-8');
+            readfile($indexPath);
+            exit;
+        }
+    }
+
+    http_response_code(404);
+    echo json_encode([
+        'status' => 404,
+        'message' => 'Endpoint not found.'
+    ]);
+    exit;
+}
+
 // Check if URL starts with 'api'
 if (empty($segments) || $segments[0] !== 'api') {
     http_response_code(404);
     echo json_encode([
         'status' => 404,
-        'message' => 'Endpoint not found. Use /api/ prefix (example: /api/user)'
+        'message' => 'Endpoint not found.'
     ]);
     exit;
 }

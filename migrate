@@ -1,0 +1,143 @@
+#!/usr/bin/env php
+<?php
+
+use config\Database;
+require_once __DIR__ . '/src/autoload.php';
+require_once __DIR__ . '/config/Database.php';
+
+$database = new Database();
+$pdo = $database->getConnection();
+
+// 1. Create 'migrations' table if it doesn't exist
+$pdo->exec("CREATE TABLE IF NOT EXISTS migrations (
+    id SERIAL PRIMARY KEY,
+    migration VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)");
+
+// Catch CLI arguments
+$command = $argv[1] ?? 'up';
+$argument = $argv[2] ?? null;
+
+if ($command === 'up') {
+    applyMigrations($pdo);
+} elseif ($command === 'down') {
+    rollbackMigration($pdo);
+} elseif ($command === 'create') {
+    createMigration($argument);
+} else {
+    echo "Command not recognized!\n";
+    echo "Available Commands:\n";
+    echo " - php migrate up              : Apply pending migrations\n";
+    echo " - php migrate down            : Rollback the last migration\n";
+    echo " - php migrate create <name>   : Create a new migration file\n";
+}
+
+/**
+ * Function to apply migrations (UP)
+ */
+function applyMigrations(PDO $pdo): void
+{
+    $statement = $pdo->prepare("SELECT migration FROM migrations");
+    $statement->execute();
+    $appliedMigrations = $statement->fetchAll(PDO::FETCH_COLUMN);
+
+    $files = scandir(__DIR__ . '/migration');
+    $toApplyMigrations = array_diff($files, $appliedMigrations, ['.', '..']);
+
+    if (empty($toApplyMigrations)) {
+        echo "All migrations are up to date.\n";
+        return;
+    }
+
+    foreach ($toApplyMigrations as $migration) {
+        require_once __DIR__ . '/migration/' . $migration;
+        $className = pathinfo($migration, PATHINFO_FILENAME);
+        $instance = new $className();
+
+        echo "Applying migration: $migration ...\n";
+        $instance->up($pdo);
+        echo "Applied migration: $migration \n";
+
+        $stmt = $pdo->prepare("INSERT INTO migrations (migration) VALUES (:migration)");
+        $stmt->execute(['migration' => $migration]);
+    }
+    echo "All new migrations have been successfully applied.\n";
+}
+
+/**
+ * Function to roll back the last migration (DOWN)
+ */
+function rollbackMigration(PDO $pdo): void
+{
+    $statement = $pdo->query("SELECT id, migration FROM migrations ORDER BY id DESC LIMIT 1");
+    $lastMigration = $statement->fetch(PDO::FETCH_ASSOC);
+
+    if (!$lastMigration) {
+        echo "No migrations to rollback.\n";
+        return;
+    }
+
+    $migrationFile = $lastMigration['migration'];
+
+    require_once __DIR__ . '/migration/' . $migrationFile;
+    $className = pathinfo($migrationFile, PATHINFO_FILENAME);
+    $instance = new $className();
+
+    echo "Rolling back migration: $migrationFile ...\n";
+    $instance->down($pdo);
+    echo "Rolled back migration: $migrationFile \n";
+
+    $stmt = $pdo->prepare("DELETE FROM migrations WHERE id = :id");
+    $stmt->execute(['id' => $lastMigration['id']]);
+}
+
+/**
+ * Function to create a migration file template (CREATE)
+ */
+function createMigration($name): void
+{
+    if (empty($name)) {
+        echo "Error: Migration name is required!\n";
+        echo "Usage example: php migrate create create_products_table\n";
+        return;
+    }
+
+    // Sanitize input name to be safe (only letters, numbers, and underscores)
+    $name = preg_replace('/[^a-zA-Z0-9_]/', '_', strtolower($name));
+
+    // Format file name using timestamp for sequential order: migration_YYYYMMDD_His_name
+    $timestamp = date('Ymd_His');
+    $className = 'migration_' . $timestamp . '_' . $name;
+    $fileName = $className . '.php';
+
+    // Directory path (Standardized to plural 'migrations')
+    $filePath = __DIR__ . '/migration/' . $fileName;
+
+    // Create migrations directory if it doesn't exist
+    if (!is_dir(__DIR__ . '/migration')) {
+        mkdir(__DIR__ . '/migration', 0777, true);
+    }
+
+    // PHP file template content
+    $template = "<?php
+
+class $className {
+    
+    public function up(PDO \$pdo): void {
+        // Write logic to create table / add columns here
+        // \$sql = \"CREATE TABLE $name (...)\";
+        // \$pdo->exec(\$sql);
+    }
+
+    public function down(PDO \$pdo): void {
+        \$pdo->exec(\"DROP TABLE IF EXISTS $name\");
+    }
+}
+";
+
+    file_put_contents($filePath, $template);
+
+    echo "Successfully created new migration file:\n";
+    echo "-> migration/$fileName\n";
+}
