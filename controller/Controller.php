@@ -2,6 +2,7 @@
 
 namespace controller;
 
+use core\Pagination;
 use core\Request;
 use JetBrains\PhpStorm\NoReturn;
 use JwtHelper;
@@ -20,7 +21,23 @@ abstract class Controller
      */
     protected array|null $authorization = null;
     protected array $user = [];
-    private array $page = [];
+    protected Pagination|null $pagination = null {
+        get {
+            $method = $_SERVER['REQUEST_METHOD'];
+            if ($method === 'GET') {
+                $page = $this->getQuery('page', 1);
+                $limit = $this->getQuery('limit', 10);
+
+                $this->pagination = new Pagination($page, $limit);
+
+                return $this->pagination;
+            }
+
+            $this->json([
+                'error' => "Invalid request method not allow get pagination in this method",
+            ], 500);
+        }
+    }
 
     /**
      * Send a JSON response with an HTTP status code.
@@ -40,23 +57,22 @@ abstract class Controller
         }
 
         $response = [["status" => $statusCode, "data" => $data]];
-        if (!empty($this->page)) {
-            $response["meta"] = [
-                'hasNext' => $this->page['hasNext'] ?? false,
-                'next' => $this->page['next'] ?? null,
-            ];
+        if ($this->pagination != null) {
+            $meta = $this->pagination->getMeta();
+
+            if (empty($meta)) {
+                http_response_code(500);
+                echo json_encode([
+                    "status" => 500,
+                    "message" => "Pagination is empty"
+                ]);
+            }
+
+            $response['meta'] = $this->pagination->getMeta();
         }
 
         echo json_encode($response);
         exit;
-    }
-
-    protected function setNextPage(int|null $page): void
-    {
-        $this->page = [
-            'hasNext' => (bool)$page,
-            'next' => $page ?? null,
-        ];
     }
 
     /**
