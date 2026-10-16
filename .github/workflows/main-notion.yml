@@ -4,15 +4,13 @@ on:
   # Trigger saat push ke branch mana saja KECUALI main-backend dan main-frontend
   push:
     branches-ignore:
-      - 'main-backend'
-      - 'main-frontend'
+      - 'main'
 
   # Trigger saat PR di-merge ke main-backend atau main-frontend
   pull_request:
     types: [closed]
     branches:
-      - 'main-backend'
-      - 'main-frontend'
+      - 'main'
 
 jobs:
   sync-notion:
