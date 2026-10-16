@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendify – Manajemen Data Anggota</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app-shell">
+    <div id="sidebar-overlay" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;"></div>
+
+    <aside id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon"><i class="fa-solid fa-qrcode"></i></div>
+        <div>
+          <div class="brand-name">Attendify</div>
+          <div class="brand-sub">Smart Multi-Event</div>
+        </div>
+      </div>
+      <div class="sidebar-user">
+        <div class="avatar" id="sb-avatar">SA</div>
+        <div class="user-info">
+          <div class="user-name" id="sb-name">Super Admin</div>
+          <div class="user-role" id="sb-role">Super Admin</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebar-nav"></nav>
+
+      <div class="sidebar-bottom">
+        <div class="nav-item" onclick="doLogout()">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Keluar</span>
+        </div>
+      </div>
+    </aside>
+
+    <header id="topbar">
+      <button class="topbar-toggle" onclick="toggleSidebar()">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="topbar-title" id="topbar-title">Manajemen Data Anggota</div>
+      <div class="topbar-actions">
+        <div class="role-pill" id="topbar-role-badge">Super Admin</div>
+        <div class="topbar-btn" onclick="showToast('Tidak ada notifikasi baru', 'info')">
+          <i class="fa-solid fa-bell"></i>
+          <span class="notif-dot"></span>
+        </div>
+        <div class="topbar-avatar" id="top-avatar">SA</div>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <div id="page-anggota" class="page" style="display:block;">
+        <div class="card">
+          <div class="toolbar">
+            <div class="search-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="member-search" placeholder="Cari nama atau NIM anggota…" oninput="filterMembers()" />
+            </div>
+            <select class="filter-select" id="member-filter-div" onchange="filterMembers()">
+              <option value="">Semua Divisi</option>
+              <option>Divisi Teknologi</option>
+              <option>Divisi Kreatif</option>
+              <option>Divisi Humas</option>
+              <option>Divisi Keuangan</option>
+              <option>Divisi Akademik</option>
+            </select>
+            <button class="btn btn-blue" onclick="openModal('modal-add-member')">
+              <i class="fa-solid fa-user-plus"></i> Tambah Anggota
+            </button>
+          </div>
+          <div class="table-wrap">
+            <table id="member-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nama Anggota</th>
+                  <th>Divisi</th>
+                  <th>Sub Event Hadir</th>
+                  <th>Sub Event Absen</th>
+                  <th>Total Point</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="member-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modal-add-member">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Tambah Anggota Baru</h3>
+        <button class="modal-close" onclick="closeModal('modal-add-member')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label>Nama Lengkap</label>
+          <input id="new-name" type="text" placeholder="Nama anggota" />
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Email</label>
+            <input id="new-email" type="email" placeholder="email@org.id" />
+          </div>
+          <div class="field-group">
+            <label>NIM / ID Anggota</label>
+            <input id="new-id" type="text" placeholder="A009" />
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Divisi</label>
+          <select id="new-div">
+            <option>Divisi Teknologi</option>
+            <option>Divisi Kreatif</option>
+            <option>Divisi Humas</option>
+            <option>Divisi Keuangan</option>
+            <option>Divisi Akademik</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-add-member')">Batal</button>
+        <button class="btn btn-blue" onclick="addMember()"><i class="fa-solid fa-plus"></i> Tambah Anggota</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/members.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initLayout('anggota');
+      renderMembers(getMembers());
+    });
+  </script>
+</body>
+</html>

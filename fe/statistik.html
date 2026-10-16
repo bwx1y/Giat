@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendify – Statistik & Laporan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app-shell">
+    <div id="sidebar-overlay" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;"></div>
+
+    <aside id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon"><i class="fa-solid fa-qrcode"></i></div>
+        <div>
+          <div class="brand-name">Attendify</div>
+          <div class="brand-sub">Smart Multi-Event</div>
+        </div>
+      </div>
+      <div class="sidebar-user">
+        <div class="avatar" id="sb-avatar">SA</div>
+        <div class="user-info">
+          <div class="user-name" id="sb-name">Super Admin</div>
+          <div class="user-role" id="sb-role">Super Admin</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebar-nav"></nav>
+
+      <div class="sidebar-bottom">
+        <div class="nav-item" onclick="doLogout()">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Keluar</span>
+        </div>
+      </div>
+    </aside>
+
+    <header id="topbar">
+      <button class="topbar-toggle" onclick="toggleSidebar()">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="topbar-title" id="topbar-title">Statistik & Laporan</div>
+      <div class="topbar-actions">
+        <div class="role-pill" id="topbar-role-badge">Super Admin</div>
+        <div class="topbar-btn" onclick="showToast('Tidak ada notifikasi baru', 'info')">
+          <i class="fa-solid fa-bell"></i>
+          <span class="notif-dot"></span>
+        </div>
+        <div class="topbar-avatar" id="top-avatar">SA</div>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <div id="page-statistik" class="page" style="display:block;">
+        <div class="dashboard-grid" style="margin-bottom:20px;">
+          <div class="card">
+            <div class="card-header"><span class="card-title">Tingkat Kehadiran Per Bulan (%)</span></div>
+            <div class="card-body">
+              <div class="chart-wrap">
+                <canvas id="chart-monthly"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Top 5 Anggota Paling Aktif (Point)</span></div>
+            <div class="card-body">
+              <div class="chart-wrap">
+                <canvas id="chart-top-member"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-header"><span class="card-title">Rata-rata Kehadiran per Event Utama (%)</span></div>
+            <div class="card-body">
+              <div class="chart-wrap">
+                <canvas id="chart-event-rate"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Distribusi Kehadiran per Divisi</span></div>
+            <div class="card-body">
+              <div class="chart-wrap">
+                <canvas id="chart-division"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/stats.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initLayout('statistik');
+      initStatCharts();
+    });
+  </script>
+</body>
+</html>

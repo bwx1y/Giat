@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendify – Detail Sub Event & Sesi Absensi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app-shell">
+    <div id="sidebar-overlay" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;"></div>
+
+    <aside id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon"><i class="fa-solid fa-qrcode"></i></div>
+        <div>
+          <div class="brand-name">Attendify</div>
+          <div class="brand-sub">Smart Multi-Event</div>
+        </div>
+      </div>
+      <div class="sidebar-user">
+        <div class="avatar" id="sb-avatar">SA</div>
+        <div class="user-info">
+          <div class="user-name" id="sb-name">Super Admin</div>
+          <div class="user-role" id="sb-role">Super Admin</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebar-nav"></nav>
+
+      <div class="sidebar-bottom">
+        <div class="nav-item" onclick="doLogout()">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Keluar</span>
+        </div>
+      </div>
+    </aside>
+
+    <header id="topbar">
+      <button class="topbar-toggle" onclick="toggleSidebar()">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="topbar-title" id="topbar-title">Detail Sub Event & Absensi</div>
+      <div class="topbar-actions">
+        <div class="role-pill" id="topbar-role-badge">Super Admin</div>
+        <div class="topbar-btn" onclick="showToast('Tidak ada notifikasi baru', 'info')">
+          <i class="fa-solid fa-bell"></i>
+          <span class="notif-dot"></span>
+        </div>
+        <div class="topbar-avatar" id="top-avatar">SA</div>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <div id="page-subevent-detail" class="page" style="display:block;">
+        <div class="breadcrumb-wrap">
+          <a class="breadcrumb-item" id="sub-bc-root-link" href="event.html">
+            <i class="fa-solid fa-calendar-days"></i> <span id="sub-bc-root">Event</span>
+          </a>
+          <span class="breadcrumb-separator"><i class="fa-solid fa-chevron-right"></i></span>
+          <a class="breadcrumb-item" id="sub-bc-parent" href="#">Webinar Nasional 2026</a>
+          <span class="breadcrumb-separator"><i class="fa-solid fa-chevron-right"></i></span>
+          <span class="breadcrumb-current" id="sub-bc-current">Rapat Persiapan 1</span>
+        </div>
+
+        <div class="card" style="border-left: 4px solid var(--blue-600);">
+          <div class="card-body" style="padding: 24px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;">
+              <div>
+                <div class="subevent-tree-badge">
+                  <i class="fa-solid fa-sitemap"></i> Sub Event dari: <strong id="sub-info-parent" style="color:var(--navy);margin-left:4px;">Webinar Nasional 2026</strong>
+                </div>
+                <h1 id="sub-info-title" style="font-size:22px;font-weight:800;color:var(--navy);margin:10px 0 6px;">Rapat Persiapan 1</h1>
+                <div style="display:flex;flex-wrap:wrap;gap:18px;font-size:13px;color:var(--navy-600);margin-top:8px;">
+                  <span><i class="fa-regular fa-calendar" style="color:var(--blue-500)"></i> <strong id="sub-info-date">12 September 2026</strong></span>
+                  <span><i class="fa-regular fa-clock" style="color:var(--blue-500)"></i> <span id="sub-info-time">19:00 - 21:00</span></span>
+                  <span><i class="fa-solid fa-location-dot" style="color:var(--blue-500)"></i> <span id="sub-info-loc">Ruang Meeting A</span></span>
+                  <span><i class="fa-solid fa-user-tie" style="color:var(--blue-500)"></i> PIC: <strong id="sub-info-pic">Budi Santoso</strong></span>
+                  <span>Status: <span class="badge badge-green" id="sub-info-status">Finished</span></span>
+                </div>
+              </div>
+              <div>
+                <button class="btn btn-blue" style="padding:10px 18px;" onclick="openQrForCurrentSubEvent()">
+                  <i class="fa-solid fa-qrcode"></i> Generate QR Absensi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="summary-icon icon-blue"><i class="fa-solid fa-users"></i></div>
+            <div class="summary-info">
+              <div class="label">Total Peserta</div>
+              <div class="value" id="sub-stat-total">40</div>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-icon icon-green"><i class="fa-solid fa-user-check"></i></div>
+            <div class="summary-info">
+              <div class="label">Hadir</div>
+              <div class="value" id="sub-stat-hadir" style="color:var(--green-500)">38</div>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-icon icon-amber" style="background:var(--red-100);color:var(--red-500)"><i class="fa-solid fa-user-xmark"></i></div>
+            <div class="summary-info">
+              <div class="label">Tidak Hadir</div>
+              <div class="value" id="sub-stat-absen" style="color:var(--red-500)">2</div>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-icon icon-purple"><i class="fa-solid fa-chart-pie"></i></div>
+            <div class="summary-info">
+              <div class="label">Persentase Kehadiran</div>
+              <div class="value" id="sub-stat-pct">95%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="card-title">Daftar Kehadiran Peserta Sub Event</span>
+              <div class="card-subtitle">Absensi real-time melalui scan QR code atau manual oleh PIC</div>
+            </div>
+            <div class="search-wrap" style="max-width:240px">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" placeholder="Cari peserta…" oninput="filterSubParticipants(this.value)" />
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nama Peserta</th>
+                  <th>Divisi</th>
+                  <th>Status Kehadiran</th>
+                  <th>Waktu Absen</th>
+                  <th>Metode</th>
+                  <th>Point Didapat</th>
+                  <th>Aksi / Koreksi</th>
+                </tr>
+              </thead>
+              <tbody id="sub-participants-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modal-qr">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>QR Code Absensi Sub Event</h3>
+        <button class="modal-close" onclick="closeModal('modal-qr')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="qr-container">
+          <div id="qr-canvas"></div>
+          <div>
+            <h2 id="qr-modal-sub-name" style="font-size:18px;font-weight:800;color:var(--navy);">Rapat Persiapan 1</h2>
+            <div style="font-size:13px;color:var(--slate-400);margin-top:2px;">
+              Parent Event: <strong id="qr-modal-parent-name" style="color:var(--blue-600)">Webinar Nasional 2026</strong>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;">
+              <span class="live-dot"></span>
+              <span style="font-size:13px;font-weight:700;color:var(--green-500)">Absensi Aktif</span>
+            </div>
+            <div class="qr-timer-box" style="margin-top:10px;">
+              Expired: <span id="qr-expire-time">21:00</span> &nbsp;|&nbsp; Sisa Waktu: <span id="qr-countdown">29:50</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" onclick="closeSessionFromModal()">
+          <i class="fa-solid fa-lock"></i> Tutup Sesi Absensi
+        </button>
+        <button class="btn btn-outline" onclick="closeModal('modal-qr')">Selesai</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/events.js"></script>
+  <script src="js/attendance.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initLayout('event');
+      const urlParams = new URLSearchParams(window.location.search);
+      const eventId = parseInt(urlParams.get('eventId'), 10) || 1;
+      const subId = parseInt(urlParams.get('subId'), 10) || 101;
+      renderSubEventDetail(eventId, subId);
+
+      const role = getCurrentRole();
+      if (role === 'admin') {
+        const rootLink = document.getElementById('sub-bc-root-link');
+        if (rootLink) rootLink.href = 'dashboard.html';
+      }
+    });
+  </script>
+</body>
+</html>

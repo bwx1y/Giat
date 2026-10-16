@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendify – Manajemen Event Utama</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app-shell">
+    <div id="sidebar-overlay" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;"></div>
+
+    <aside id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon"><i class="fa-solid fa-qrcode"></i></div>
+        <div>
+          <div class="brand-name">Attendify</div>
+          <div class="brand-sub">Smart Multi-Event</div>
+        </div>
+      </div>
+      <div class="sidebar-user">
+        <div class="avatar" id="sb-avatar">SA</div>
+        <div class="user-info">
+          <div class="user-name" id="sb-name">Super Admin</div>
+          <div class="user-role" id="sb-role">Super Admin</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebar-nav"></nav>
+
+      <div class="sidebar-bottom">
+        <div class="nav-item" onclick="doLogout()">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Keluar</span>
+        </div>
+      </div>
+    </aside>
+
+    <header id="topbar">
+      <button class="topbar-toggle" onclick="toggleSidebar()">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="topbar-title" id="topbar-title">Manajemen Event Utama</div>
+      <div class="topbar-actions">
+        <div class="role-pill" id="topbar-role-badge">Super Admin</div>
+        <div class="topbar-btn" onclick="showToast('Tidak ada notifikasi baru', 'info')">
+          <i class="fa-solid fa-bell"></i>
+          <span class="notif-dot"></span>
+        </div>
+        <div class="topbar-avatar" id="top-avatar">SA</div>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <div id="page-event" class="page" style="display:block;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="card-title">Daftar Event Utama</span>
+              <div class="card-subtitle">Setiap Event Utama memayungi beberapa Sub Event aktivitas</div>
+            </div>
+            <button class="btn btn-blue" id="btn-create-event-main" onclick="openModal('modal-add-event')">
+              <i class="fa-solid fa-plus"></i> Buat Event
+            </button>
+          </div>
+          <div class="toolbar">
+            <div class="search-wrap" style="max-width:280px">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="search-event" placeholder="Cari Event Utama…" oninput="filterEvents()" />
+            </div>
+            <select class="filter-select" id="filter-event-status" onchange="filterEvents()">
+              <option value="">Semua Status</option>
+              <option value="Active">Active</option>
+              <option value="Upcoming">Upcoming</option>
+              <option value="Finished">Finished</option>
+            </select>
+          </div>
+          <div class="event-primary-grid" id="event-grid"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modal-add-event">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Buat Event Utama Baru</h3>
+        <button class="modal-close" onclick="closeModal('modal-add-event')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label>Nama Event Utama</label>
+          <input type="text" id="new-event-name" placeholder="Contoh: Webinar Nasional 2026" />
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label>Tanggal Mulai</label>
+            <input type="date" id="new-event-start" />
+          </div>
+          <div class="field-group">
+            <label>Tanggal Selesai</label>
+            <input type="date" id="new-event-end" />
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Deskripsi Event</label>
+          <textarea id="new-event-desc" rows="3" placeholder="Keterangan singkat tentang event utama…"></textarea>
+        </div>
+        <div class="field-group">
+          <label>Status Event</label>
+          <select id="new-event-status">
+            <option value="Active">Active</option>
+            <option value="Upcoming">Upcoming</option>
+            <option value="Finished">Finished</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-add-event')">Batal</button>
+        <button class="btn btn-blue" onclick="saveNewEvent()"><i class="fa-solid fa-plus"></i> Simpan Event Utama</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/events.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initLayout('event');
+      renderEvents();
+    });
+  </script>
+</body>
+</html>
