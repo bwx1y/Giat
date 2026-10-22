@@ -16,8 +16,8 @@ SELECT user_meetings.id,
        meetings.start_date             AS date,
        user_meetings.attendance_method AS method,
        CASE
-           WHEN user_meetings.id IS NOT NULL THEN 'Present'
-           ELSE 'Not Present'
+           WHEN user_meetings.id IS NOT NULL THEN 1
+           ELSE 0
            END                         AS status
 FROM users
          JOIN user_events ON user_events.user_id = users.id AND user_events.deleted_at IS NULL
