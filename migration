@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-$pdo = require __DIR__ . '/config/database.php';
+$pdo = require_once __DIR__ . '/config/database.php';
 
 // 1. Create 'migrations' table if it doesn't exist
 $pdo->exec("CREATE TABLE IF NOT EXISTS migrations (
@@ -20,12 +20,15 @@ if ($command === 'up') {
     rollbackMigration($pdo);
 } elseif ($command === 'create') {
     createMigration($argument);
+} elseif ($command === 'seed') {
+    seedDummyData($pdo);
 } else {
     echo "Command not recognized!\n";
     echo "Available Commands:\n";
     echo " - php migration up              : Apply pending migrations\n";
     echo " - php migration down            : Rollback the last migration\n";
     echo " - php migration create <name>   : Create a new migration file\n";
+    echo " - php migration seed            : Seed dummy data from schema/dummy-data.sql\n";
 }
 
 /**
@@ -147,4 +150,21 @@ class $className {
 
     echo "Successfully created new migration file:\n";
     echo "-> migrations/$fileName\n";
+}
+
+/**
+ * Function to seed dummy data from schema/dummy-data.sql (SEED)
+ */
+function seedDummyData(PDO $pdo): void
+{
+    $file = __DIR__ . '/schema/dummy-data.sql';
+    if (!file_exists($file)) {
+        echo "Error: schema/dummy-data.sql not found.\n";
+        return;
+    }
+
+    echo "Seeding dummy data from schema/dummy-data.sql ...\n";
+    $sql = file_get_contents($file);
+    $pdo->exec($sql);
+    echo "Dummy data seeded successfully (20 records per table).\n";
 }

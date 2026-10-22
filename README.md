@@ -64,6 +64,7 @@ Perintah migrasi lainnya:
 ```bash
 php migration down            # Rollback 1 migrasi terakhir
 php migration create <nama>   # Buat file template migrasi baru
+php migration seed            # Isi dummy data (20 data per tabel)
 ```
 
 ### 4. Menjalankan Server Lokal

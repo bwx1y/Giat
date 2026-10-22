@@ -1,22 +1,22 @@
-DO
-$$
-    BEGIN
-        -- Cek dan buat tipe 'user_role'
-        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
-            CREATE TYPE user_role AS ENUM ('Admin', 'Member');
-        END IF;
+    DO
+    $$
+        BEGIN
+            -- Cek dan buat tipe 'user_role'
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+                CREATE TYPE user_role AS ENUM ('Admin', 'Member');
+            END IF;
 
-        -- Cek dan buat tipe 'event_status' (perbaikan typo: 'in progress')
-        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'event_status') THEN
-            CREATE TYPE event_status AS ENUM ('Not started', 'in progress', 'done');
-        END IF;
+            -- Cek dan buat tipe 'event_status' (perbaikan typo: 'in progress')
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'event_status') THEN
+                CREATE TYPE event_status AS ENUM ('Not started', 'in progress', 'done');
+            END IF;
 
-        -- Cek dan buat tipe 'attendance_method'
-        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'attendance_method') THEN
-            CREATE TYPE attendance_method AS ENUM ('Qr', 'Manually');
-        END IF;
-    END
-$$;
+            -- Cek dan buat tipe 'attendance_method'
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'attendance_method') THEN
+                CREATE TYPE attendance_method AS ENUM ('Qr', 'Manually');
+            END IF;
+        END
+    $$;
 
 -- 1. Entitas USERS
 CREATE TABLE IF NOT EXISTS users
