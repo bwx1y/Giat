@@ -15,6 +15,17 @@ $options = [
     PDO::ATTR_EMULATE_PREPARES => false,
 ];
 
+/**
+ * Establishes and returns a secure PostgreSQL database connection via PDO.
+ *
+ * This script retrieves database credentials from environment variables
+ * and configures the PDO instance with secure defaults (exception error mode,
+ * associative array fetching, and disabled emulated prepares).
+ *
+ * @return PDO Returns an active PDO database connection instance.
+ *
+ * @throws PDOException If the connection fails or authentication is invalid (triggers HTTP 500 and terminates execution).
+ */
 try {
     return new PDO($dsn, $user, $pass, $options);
 } catch (PDOException $e) {
