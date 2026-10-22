@@ -1,5 +1,5 @@
 <?php
-require_once "../../../config/query-builder.php";
+require_once __DIR__ . "/../../../config/query-builder.php";
 
 $page = $_GET['page'] ?? 1;
 $size = $_GET['size'] ?? 10;
@@ -34,21 +34,19 @@ $stmtResult = queryBuilder(
     page: $page,
 );
 
+$result = $stmtResult->fetchAll(PDO::FETCH_ASSOC);
+//var_dump($result);
+
 $stmtEvent = queryBuilder(
-    table: 'event',
+    table: 'events',
     filters: [
-        'key' => 'delete_at',
-        'query' => 'event.delete_at :delete_at',
-        'value' => 'NOT NULL',
+        [
+            'key' => 'deleted_at_check',
+            'query' => 'events.deleted_at IS NULL',
+            'value' => 'bypass',
+        ]
     ],
 );
 
-$stmtEvent->execute();
-$stmtResult->execute();
-
-$eventList = $stmtResult->fetchAll();
-$result = $stmtResult->fetchAll();
-
-
-
-
+$eventList = $stmtEvent->fetchAll(PDO::FETCH_ASSOC);
+//var_dump($eventList);
