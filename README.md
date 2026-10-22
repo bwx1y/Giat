@@ -52,14 +52,28 @@ DB_USER=postgres
 DB_PASS=password_anda
 ```
 
-### 3. Menjalankan Server Lokal
+### 3. Migrasi Database
+Jalankan migrasi untuk membuat tabel dan struktur skema:
+```bash
+php migration up
+# atau jika file memiliki izin eksekusi
+./migration up
+```
+
+Perintah migrasi lainnya:
+```bash
+php migration down            # Rollback 1 migrasi terakhir
+php migration create <nama>   # Buat file template migrasi baru
+```
+
+### 4. Menjalankan Server Lokal
 Jalankan built-in web server PHP:
 ```bash
 php -S localhost:8080 -t public/
 ```
 Akses aplikasi melalui browser di `http://localhost:8080`.
 
-### 4. Pengecekan Sintaks PHP
+### 5. Pengecekan Sintaks PHP
 ```bash
 find . -name "*.php" -not -path "*/.*" -exec php -l {} +
 ```
