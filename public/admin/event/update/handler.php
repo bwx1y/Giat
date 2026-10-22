@@ -11,7 +11,7 @@ $body = validate([
     'start_date' => 'required',
     'end_date' => 'required',
     'status' => 'in:Not started,In progress,Completed,Cancelled'
-]);
+], "/admin/event");
 
 $sql = "UPDATE events 
         SET title = :title, 

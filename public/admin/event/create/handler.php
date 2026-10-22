@@ -10,7 +10,7 @@ $body = validate([
     'start_date' => 'required',
     'end_date' => 'required',
     'status' => 'in:Not started,In progress,Completed,Cancelled'
-]);
+], "/admin/event/create");
 
 $sql = "INSERT INTO events (title, description, location, start_date, end_date, status) 
         VALUES (:title, :description, :location, :start_date, :end_date, :status)";
