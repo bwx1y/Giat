@@ -25,6 +25,14 @@
     - `require_login()`: Guards protected pages; redirects unauthenticated requests to `auth/login.php`.
     - `current_user()`: Queries `users` table via PDO for the active `$_SESSION['user_id']` (fallback to session array).
     - `logout_user()`: Clears `$_SESSION`, deletes session cookie, and destroys session.
+- **CSRF & Validation (`config/csrf.php`, `config/validation.php`)**:
+  - `csrf_token()`, `csrf_field()`, `verify_csrf()` for CSRF protection.
+  - `validate(array $rules, ?string $fallbackUrl)` for input validation, flash errors (`error()`, `has_error()`, `old()`).
+- **Database Migrations (`migration`, `migrations/`)**:
+  - CLI runner: `php migration <command>` or `./migration <command>`.
+  - Migration files live in `migrations/` named `migration_YYYYMMDD_His_<name>.php`.
+  - Migration class must implement `up(PDO $pdo): void` and `down(PDO $pdo): void`.
+  - Applied migrations are recorded in PostgreSQL `migrations` table.
 
 ## Git & Notion Workflow
 - **Commit Message Format**:
@@ -32,6 +40,13 @@
   - `.github/workflows/main-notion.yml` parses `^(\d+)\s*[-:]?` on push to transition tasks to "In progress".
 
 ## Developer Commands
+- **Database Migrations**:
+  ```bash
+  php migration up            # Run pending migrations
+  php migration down          # Rollback last migration
+  php migration create <name> # Scaffold new migration file
+  php migration seed          # Seed dummy data (20 records per table)
+  ```
 - **Syntax check all PHP files**:
   ```bash
   find . -name "*.php" -not -path "*/.*" -exec php -l {} +
