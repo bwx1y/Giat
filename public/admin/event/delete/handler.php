@@ -1,7 +1,10 @@
 <?php
 
 require_once __DIR__ . '/../../../../config/validation.php';
-$applicationDb = require_once __DIR__ . "/../../../../config/database.php";
+global $applicationDb;
+if (!$applicationDb instanceof PDO) {
+    $applicationDb = require __DIR__ . "/../../../../config/database.php";
+}
 
 $id = null;
 

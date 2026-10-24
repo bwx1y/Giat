@@ -1,6 +1,9 @@
 <?php
 
-$applicationDb = require_once __DIR__ . "/database.php";
+global $applicationDb;
+if (!$applicationDb instanceof PDO) {
+    $applicationDb = require_once __DIR__ . "/database.php";
+}
 
 /**
  * Dynamically builds and executes a prepared statement with support for

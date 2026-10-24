@@ -1,7 +1,12 @@
 <?php
 
 require_once __DIR__ . '/../../../../config/validation.php';
-$applicationDb = require_once __DIR__ . "/../../../../config/database.php";
+global $applicationDb;
+if (!$applicationDb instanceof PDO) {
+    $applicationDb = require __DIR__ . "/../../../../config/database.php";
+}
+
+$idx = $_POST['id'];
 
 $body = validate([
     'id' => 'required|numeric',
@@ -11,7 +16,7 @@ $body = validate([
     'start_date' => 'required',
     'end_date' => 'required',
     'status' => 'in:Not started,In progress,Completed,Cancelled'
-], "/admin/event");
+], "/admin/event/update?id=" . $idx);
 
 $sql = "UPDATE events 
         SET title = :title, 
