@@ -9,14 +9,26 @@
   - `DB_NAME`, `DB_USER`, `DB_PASS`
 
 ## Architecture & Conventions (Current Codebase)
+- **Bootstrap Initialization (`config/init.php`)**:
+  - Central loader for config and core helpers.
+  - Load order:
+    1. `config/load-env.php`
+    2. `config/session.php`
+    3. `config/csrf.php`
+    4. `config/validation.php`
+    5. `config/database.php`
+    6. `config/query-builder.php`
 - **Environment Loading (`config/load-env.php`)**:
   - Automatically loads `../.env` when included.
   - Populates `putenv()`, `$_ENV`, and `$_SERVER`.
   - Throws `Exception` if `.env` does not exist.
 - **Database Connection (`config/database.php`)**:
-  - Includes `load-env.php` and returns an active `PDO` instance.
+  - Includes `load-env.php` and returns an active `PDO` instance (cached via global `$applicationDb`).
   - Sets `ERRMODE_EXCEPTION`, `FETCH_ASSOC`, and disables `EMULATE_PREPARES`.
   - Throws 500 HTTP response and halts script on connection failure.
+- **Query Builder (`config/query-builder.php`)**:
+  - Provides `queryBuilder($table, $columns, $filters, $size, $page, $joins, $limit): PDOStatement`.
+  - Reuses global `$applicationDb` PDO instance.
 - **Session & Auth Helpers (`config/session.php`)**:
   - Initializes native PHP session with `session.use_strict_mode` and `session.cookie_httponly`.
   - Exposes global helpers:
@@ -53,5 +65,6 @@
   ```
 - **Run dev server**:
   ```bash
-  php -S localhost:8080 -t public/
+  php -S localhost:8080 router.php
+  # atau tanpa custom router: php -S localhost:8080 -t public/
   ```

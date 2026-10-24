@@ -68,9 +68,11 @@ php migration seed            # Isi dummy data (20 data per tabel)
 ```
 
 ### 4. Menjalankan Server Lokal
-Jalankan built-in web server PHP:
+Jalankan built-in web server PHP menggunakan script router:
 ```bash
-php -S localhost:8080 -t public/
+php -S localhost:8080 router.php
+# atau langsung melayani direktori public:
+# php -S localhost:8080 -t public/
 ```
 Akses aplikasi melalui browser di `http://localhost:8080`.
 
