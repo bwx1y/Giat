@@ -1,11 +1,13 @@
 <?php
 
-$applicationDb = require_once __DIR__ . "/database.php";
-
-ini_set('session.use_strict_mode', 1);
-ini_set('session.cookie_httponly', 1);
+global $applicationDb;
+if (!$applicationDb instanceof PDO) {
+    $applicationDb = require_once __DIR__ . "/database.php";
+}
 
 if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.use_strict_mode', 1);
+    ini_set('session.cookie_httponly', 1);
     session_start();
 }
 /**

@@ -1,6 +1,11 @@
 <?php
 include_once __DIR__ . "/load-env.php";
 
+global $applicationDb;
+if ($applicationDb instanceof PDO) {
+    return $applicationDb;
+}
+
 $host = getenv('DB_HOST') ?: '127.0.0.1';
 $port = getenv('DB_PORT') ?: '5432';
 $db = getenv('DB_NAME');
@@ -27,7 +32,8 @@ $options = [
  * @throws PDOException If the connection fails or authentication is invalid (triggers HTTP 500 and terminates execution).
  */
 try {
-    return new PDO($dsn, $user, $pass, $options);
+    $applicationDb = new PDO($dsn, $user, $pass, $options);
+    return $applicationDb;
 } catch (PDOException $e) {
     http_response_code(500);
 
