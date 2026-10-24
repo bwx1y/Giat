@@ -43,13 +43,14 @@ Salin file konfigurasi `.env.example` menjadi `.env`:
 ```bash
 cp .env.example .env
 ```
-Sesuaikan parameter database di dalam file `.env`:
+Sesuaikan parameter database dan konfigurasi di dalam file `.env`:
 ```env
 DB_HOST=127.0.0.1
 DB_PORT=5432
 DB_NAME=pbl_db
 DB_USER=postgres
 DB_PASS=password_anda
+LOG_MAX_SIZE=5M
 ```
 
 ### 3. Migrasi Database
@@ -70,7 +71,11 @@ php migration seed            # Isi dummy data (20 data per tabel)
 ### 4. Menjalankan Server Lokal
 Jalankan built-in web server PHP menggunakan script router:
 ```bash
+# Mode standar
 php -S localhost:8080 router.php
+
+# Mode hening (menghilangkan log internal Accepted/Closing dari PHP)
+php -q -S localhost:8080 router.php
 ```
 Akses aplikasi melalui browser di `http://localhost:8080`.
 
@@ -86,7 +91,17 @@ Sistem routing berbasis file (`router.php`) di dalam folder `public/`:
   - `/admin/*`: Diproteksi penuh oleh `require_role('Admin')`. Jika belum login diarahkan ke `/login?error=Login is required`, dan jika role bukan Admin mengembalikan respon `403 Forbidden`.
   - Helper otorisasi tersedia di `config/session.php`: `is_logged_in()`, `current_user()`, `current_role()`, `has_role($role)`, `require_login()`, dan `require_role($role)`.
 
-### 6. Pengecekan Sintaks PHP
+### 6. Sistem Logging (`config/logger.php`)
+- **Lokasi File Log**: `log/app.log` (rotasi otomatis ke `log/app.log.1` jika melebihi ukuran `LOG_MAX_SIZE`).
+- **Pencatatan Otomatis**: Setiap request dynamic yang diproses oleh `router.php` otomatis dicatat ke file log dan terminal:
+  ```text
+  [YYYY-MM-DD HH:MM:SS] [INFO] <ip> <method> <path> -> <target_route>
+  ```
+- **Helper Fungsi Manual**:
+  - `write_log(string $message, string $level = 'INFO', array $context = []): void`
+  - `logger(string $message, string $level = 'INFO', array $context = []): void`
+
+### 7. Pengecekan Sintaks PHP
 ```bash
 find . -name "*.php" -not -path "*/.*" -exec php -l {} +
 ```

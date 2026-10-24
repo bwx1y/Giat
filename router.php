@@ -92,7 +92,14 @@ function resolveRoute(string $baseDir, string $uri): ?array {
     return null;
 }
 
-// 4. Role & Auth Guard
+// 4. Resolver & Access Logger
+$resolved = resolveRoute(__DIR__ . '/public', $uri);
+$ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$target = $resolved !== null ? str_replace(__DIR__ . '/', '', $resolved['file']) : '404';
+write_log("$ip $method $uri -> $target", 'INFO');
+
+// 5. Role & Auth Guard
 $cleanPath = '/' . trim($uri, '/');
 
 if ($cleanPath === '/login' && is_logged_in()) {
@@ -103,8 +110,6 @@ if ($cleanPath === '/login' && is_logged_in()) {
 if ($cleanPath === '/admin' || str_starts_with($cleanPath, '/admin/')) {
     require_role('Admin');
 }
-
-$resolved = resolveRoute(__DIR__ . '/public', $uri);
 
 if ($resolved !== null) {
     foreach ($resolved['params'] as $key => $value) {

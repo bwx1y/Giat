@@ -13,11 +13,12 @@
   - Central loader for config and core helpers.
   - Load order:
     1. `config/load-env.php`
-    2. `config/session.php`
-    3. `config/csrf.php`
-    4. `config/validation.php`
-    5. `config/database.php`
-    6. `config/query-builder.php`
+    2. `config/logger.php`
+    3. `config/session.php`
+    4. `config/csrf.php`
+    5. `config/validation.php`
+    6. `config/database.php`
+    7. `config/query-builder.php`
 - **Routing & Clean URLs (`router.php`)**:
   - Custom file-based router executing targets within `public/`.
   - Static assets (CSS, JS, images, fonts) disajikan langsung.
@@ -52,6 +53,9 @@
     - `has_role(string|array $roles)`: Checks if current user matches given role(s).
     - `require_role(string|array $roles)`: Guards page by role; redirects unauthenticated to login or halts with 403 Forbidden.
     - `logout_user()`: Clears `$_SESSION`, deletes session cookie, and destroys session.
+- **Logger (`config/logger.php`)**:
+  - `write_log($message, $level = 'INFO', $context = [])` dan `logger(...)`.
+  - Simpan ke `log/app.log` dengan rotasi file (`.1`) jika melebihi `LOG_MAX_SIZE` (default `5M`).
 - **CSRF & Validation (`config/csrf.php`, `config/validation.php`)**:
   - `csrf_token()`, `csrf_field()`, `verify_csrf()` for CSRF protection.
   - `validate(array $rules, ?string $fallbackUrl)` for input validation, flash errors (`error()`, `has_error()`, `old()`).
