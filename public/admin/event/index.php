@@ -1,7 +1,5 @@
 <?php
 
-require_once __DIR__ . '/../../../config/query-builder.php';
-
 $page = $_GET['page'] ?? 1;
 $size = $_GET['size'] ?? 10;
 
@@ -12,7 +10,7 @@ $filter = [
     [
         'key' => 'search',
         'query' => 'title ILIKE :search',
-        'value' => $search ? "%$search%" : null,
+        'value' => $search ? "$search%" : null,
     ],
     [
         'key' => 'status',

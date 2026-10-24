@@ -1,22 +1,17 @@
 <?php
 
-require_once __DIR__ . '/../../../../config/validation.php';
 global $applicationDb;
-if (!$applicationDb instanceof PDO) {
-    $applicationDb = require __DIR__ . "/../../../../config/database.php";
-}
 
-$idx = $_POST['id'];
+$idx = $_GET['id'];
 
 $body = validate([
-    'id' => 'required|numeric',
     'title' => 'required|max:255',
     'description' => 'max:5000',
     'location' => 'max:255',
     'start_date' => 'required',
     'end_date' => 'required',
     'status' => 'in:Not started,In progress,Completed,Cancelled'
-], "/admin/event/update?id=" . $idx);
+], '/admin/event/' . $idx . '/update');
 
 $sql = "UPDATE events 
         SET title = :title, 
@@ -30,7 +25,7 @@ $sql = "UPDATE events
 $stmt = $applicationDb->prepare($sql);
 
 $stmt->execute([
-    'id' => $body['id'],
+    'id' => $idx,
     'title' => $body['title'],
     'description' => $body['description'] ?? null,
     'location' => $body['location'] ?? null,
@@ -39,4 +34,4 @@ $stmt->execute([
     'status' => $body['status'] ?? 'Not started',
 ]);
 
-header('Location: /admin/event/update?id=' . $body['id']);
+header('Location: /admin/event/' . $idx . '/update');

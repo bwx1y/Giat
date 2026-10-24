@@ -18,6 +18,18 @@
     4. `config/validation.php`
     5. `config/database.php`
     6. `config/query-builder.php`
+- **Routing & Clean URLs (`router.php`)**:
+  - Custom file-based router executing targets within `public/`.
+  - Static assets (CSS, JS, images, fonts) disajikan langsung.
+  - Clean URL: request path dipetakan ke target `.php` tanpa ekstensi di URL.
+  - Dynamic path parameters:
+    - `public/.../[param].php` untuk segmen file dinamis terakhir.
+    - `public/.../[param]/` untuk segmen direktori dinamis.
+  - Parameter otomatis disuntikkan ke `$_GET['param']` dan variabel global `$route_params['param']`.
+  - Rute statis/exact selalu diprioritaskan sebelum fallback dynamic match.
+  - Role & Auth Guard:
+    - `/login`: Redirect otomatis jika sudah login (`/admin/event` untuk Admin, `/` untuk Member).
+    - `/admin` & `/admin/*`: Diproteksi via `require_role('Admin')` (redirect ke `/login` jika belum login, HTTP 403 jika role tidak sesuai).
 - **Environment Loading (`config/load-env.php`)**:
   - Automatically loads `../.env` when included.
   - Populates `putenv()`, `$_ENV`, and `$_SERVER`.
@@ -32,10 +44,13 @@
 - **Session & Auth Helpers (`config/session.php`)**:
   - Initializes native PHP session with `session.use_strict_mode` and `session.cookie_httponly`.
   - Exposes global helpers:
-    - `set_user_session($user)`: Regenerates session ID, stores `user_logged_in`, `user_id`, `username`.
+    - `set_user_session($user)`: Regenerates session ID, stores `user_logged_in`, `user_id`, `username`, `role`.
     - `is_logged_in()`: Returns boolean authentication status.
-    - `require_login()`: Guards protected pages; redirects unauthenticated requests to `auth/login.php`.
+    - `require_login()`: Guards protected pages; redirects unauthenticated requests to `/login?error=Login is required`.
     - `current_user()`: Queries `users` table via PDO for the active `$_SESSION['user_id']` (fallback to session array).
+    - `current_role()`: Returns active user role (`string|null`).
+    - `has_role(string|array $roles)`: Checks if current user matches given role(s).
+    - `require_role(string|array $roles)`: Guards page by role; redirects unauthenticated to login or halts with 403 Forbidden.
     - `logout_user()`: Clears `$_SESSION`, deletes session cookie, and destroys session.
 - **CSRF & Validation (`config/csrf.php`, `config/validation.php`)**:
   - `csrf_token()`, `csrf_field()`, `verify_csrf()` for CSRF protection.

@@ -71,12 +71,22 @@ php migration seed            # Isi dummy data (20 data per tabel)
 Jalankan built-in web server PHP menggunakan script router:
 ```bash
 php -S localhost:8080 router.php
-# atau langsung melayani direktori public:
-# php -S localhost:8080 -t public/
 ```
 Akses aplikasi melalui browser di `http://localhost:8080`.
 
-### 5. Pengecekan Sintaks PHP
+### 5. Konvensi Routing & Clean URL
+Sistem routing berbasis file (`router.php`) di dalam folder `public/`:
+- **Clean URL**: Akses file PHP tanpa ekstensi `.php` (misal: `/admin/event` -> `public/admin/event/index.php`, `/login_handler` -> `public/login_handler.php`).
+- **Dynamic Path Parameter**:
+  - File `[param].php`: Menangkap segmen URL terakhir (misal `/event/123` dipetakan ke `public/event/[id].php`).
+  - Folder `[param]/`: Menangkap segmen URL dinamis di tengah/akhir (misal `/event/123/edit` dipetakan ke `public/event/[id]/edit.php`).
+- Nilai parameter otomatis tersedia di `$_GET['param']` dan variabel `$route_params['param']`.
+- **Role & Auth Guard**:
+  - `/login`: Pengguna yang sudah login diarahkan otomatis ke `/admin/event` (Admin) atau `/` (Member).
+  - `/admin/*`: Diproteksi penuh oleh `require_role('Admin')`. Jika belum login diarahkan ke `/login?error=Login is required`, dan jika role bukan Admin mengembalikan respon `403 Forbidden`.
+  - Helper otorisasi tersedia di `config/session.php`: `is_logged_in()`, `current_user()`, `current_role()`, `has_role($role)`, `require_login()`, dan `require_role($role)`.
+
+### 6. Pengecekan Sintaks PHP
 ```bash
 find . -name "*.php" -not -path "*/.*" -exec php -l {} +
 ```

@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . '/../../../../config/query-builder.php';
 
 $id = $_GET['id'] ?? null;
 if (empty($id)) {
