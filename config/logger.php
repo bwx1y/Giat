@@ -30,7 +30,7 @@ function write_log(string $message, string $level = 'INFO', array $context = [])
 
     clearstatcache(true, $logFile);
     if (file_exists($logFile) && filesize($logFile) >= $maxBytes) {
-        $backup = $logFile . '.1';
+        $backup = $dir . '/' . time() . '.log';
         if (file_exists($backup)) {
             unlink($backup);
         }

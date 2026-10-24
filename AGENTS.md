@@ -55,7 +55,7 @@
     - `logout_user()`: Clears `$_SESSION`, deletes session cookie, and destroys session.
 - **Logger (`config/logger.php`)**:
   - `write_log($message, $level = 'INFO', $context = [])` dan `logger(...)`.
-  - Simpan ke `log/app.log` dengan rotasi file (`.1`) jika melebihi `LOG_MAX_SIZE` (default `5M`).
+  - Simpan ke `log/app.log` dengan rotasi file (`<epoch>.log`) jika melebihi `LOG_MAX_SIZE` (default `5M`).
 - **CSRF & Validation (`config/csrf.php`, `config/validation.php`)**:
   - `csrf_token()`, `csrf_field()`, `verify_csrf()` for CSRF protection.
   - `validate(array $rules, ?string $fallbackUrl)` for input validation, flash errors (`error()`, `has_error()`, `old()`).

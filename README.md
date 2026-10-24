@@ -92,7 +92,7 @@ Sistem routing berbasis file (`router.php`) di dalam folder `public/`:
   - Helper otorisasi tersedia di `config/session.php`: `is_logged_in()`, `current_user()`, `current_role()`, `has_role($role)`, `require_login()`, dan `require_role($role)`.
 
 ### 6. Sistem Logging (`config/logger.php`)
-- **Lokasi File Log**: `log/app.log` (rotasi otomatis ke `log/app.log.1` jika melebihi ukuran `LOG_MAX_SIZE`).
+- **Lokasi File Log**: `log/app.log` (rotasi otomatis ke `log/<epoch>.log` jika melebihi ukuran `LOG_MAX_SIZE`).
 - **Pencatatan Otomatis**: Setiap request dynamic yang diproses oleh `router.php` otomatis dicatat ke file log dan terminal:
   ```text
   [YYYY-MM-DD HH:MM:SS] [INFO] <ip> <method> <path> -> <target_route>
