@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../../config/session.php';
+require_once __DIR__ . '/../../config/validation.php';
 
 require_login();
 
@@ -14,25 +15,27 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$username   = trim($_POST['username'] ?? '');
-$fullName   = trim($_POST['full_name'] ?? '');
-$password   = ($_POST['password'] ?? '');
-$role       = ($_POST['role'] ?? 'Member');
+$redirectTo = $_SERVER['HTTP_REFERER'] ?? 'index.php';
 
-if (empty($username) || empty($fullName) || empty($password)) {
-    header("Location: index.php?error=Semua bidang wajib diisi");
-    exit;
-}
+$data = validate([
+    'username' => 'required|min:3|max:100',
+    'full_name' => 'required|min:3|max:255',
+    'password' => 'required|min:6',
+    'role' => 'required|in:Admin,Member', 
+], $redirectTo);
 
-if (!in_array($role, ['Admin', 'Member'])) {
-    $role = 'Member';
-}
+$username = trim($data['username']);
+$fullName = trim($data['full_name']);
+$password = $data['password'];
+$role = $data['role'];
 
 $stmtCheck = $applicationDb->prepare("SELECT id FROM users WHERE username = :username AND deleted_at IS NULL LIMIT 1");
 $stmtCheck->execute([':username' => $username]);
 
-if($stmtCheck->fetch()) {
-    header("Location: index.php?error=Username sudah digunakan oleh akun lain");
+if ($stmtCheck->fetch()) {
+    $_SESSION['field_errors'] ['username'] [] = 'Username sudah digunakan oleh akun lain.';
+    $_SESSION['old_input'] =$data;
+    header("Location: " . $redirectTo);
     exit;
 }
 
