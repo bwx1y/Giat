@@ -1,52 +1,117 @@
--- 1. Insert 100 data ke tabel users
-INSERT INTO users (full_name, username, password, role, active, created_at)
-SELECT
-    'User ' || i,
-    'user_' || i,
-    '$2a$12$eImiTXuWVxfM37uY4JANjO1k.eM42.gY.y1234567890abcdefgh',
-    (ARRAY['Admin', 'Member']::user_role[])[FLOOR(RANDOM() * 2 + 1)],
-    TRUE,
-    NOW() - (i || ' days')::INTERVAL
-FROM generate_series(1, 100) AS i;
+-- Reset tabel dan identity sequence
+TRUNCATE TABLE user_meetings, user_events, meetings, events, users RESTART IDENTITY CASCADE;
 
--- 2. Insert 100 data ke tabel events
-INSERT INTO events (title, description, location, start_date, end_date, status, created_at)
-SELECT
-    'Event ' || i,
-    'Deskripsi lengkap untuk event ke-' || i,
-    'Gedung ' || CHR(65 + (i % 5)) || ' Lantai ' || ((i % 3) + 1),
-    NOW() + (i || ' days')::INTERVAL,
-    NOW() + (i || ' days')::INTERVAL + INTERVAL '3 hours',
-    (ARRAY['Not started', 'in progress', 'done']::event_status[])[FLOOR(RANDOM() * 3 + 1)],
-    NOW() - (i || ' days')::INTERVAL
-FROM generate_series(1, 100) AS i;
+-- 1. Insert 20 data ke tabel users (password default: 'password')
+INSERT INTO users (full_name, username, password, role, active, created_at) VALUES
+('Ahmad Fauzi', 'ahmad_fauzi', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Admin', TRUE, NOW() - INTERVAL '30 days'),
+('Siti Nurhaliza', 'siti_nurhaliza', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Admin', TRUE, NOW() - INTERVAL '29 days'),
+('Budi Santoso', 'budi_santoso', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '28 days'),
+('Dewi Lestari', 'dewi_lestari', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '27 days'),
+('Eko Prasetyo', 'eko_prasetyo', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '26 days'),
+('Fajar Ramadhan', 'fajar_ramadhan', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '25 days'),
+('Gita Gutawa', 'gita_gutawa', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '24 days'),
+('Hadi Wijaya', 'hadi_wijaya', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '23 days'),
+('Indah Permata', 'indah_permata', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '22 days'),
+('Joko Widodo', 'joko_widodo', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '21 days'),
+('Kartika Putri', 'kartika_putri', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '20 days'),
+('Lukman Hakim', 'lukman_hakim', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '19 days'),
+('Mega Utami', 'mega_utami', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '18 days'),
+('Nanda Pratama', 'nanda_pratama', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '17 days'),
+('Oki Setiana', 'oki_setiana', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '16 days'),
+('Putra Perkasa', 'putra_perkasa', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '15 days'),
+('Qori Sandioriva', 'qori_sandioriva', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '14 days'),
+('Rian Hidayat', 'rian_hidayat', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '13 days'),
+('Sari Melati', 'sari_melati', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '12 days'),
+('Taufik Hidayat', 'taufik_hidayat', '$2y$12$hsaFA5H8ReSh7JKUVeUT8OczUwde.BCLmwcBh7h4BRA3yctmfxYC.', 'Member', TRUE, NOW() - INTERVAL '11 days');
 
--- 3. Insert 100 data ke tabel meetings
-INSERT INTO meetings (event_id, title, location, start_date, end_date, status, created_at)
-SELECT
-    ((i - 1) % 100) + 1,
-    'Meeting ' || i,
-    'Ruang Rapat ' || ((i % 10) + 1),
-    NOW() + (i || ' days')::INTERVAL,
-    NOW() + (i || ' days')::INTERVAL + INTERVAL '1 hour',
-    (ARRAY['Not started', 'in progress', 'done']::event_status[])[FLOOR(RANDOM() * 3 + 1)],
-    NOW() - (i || ' days')::INTERVAL
-FROM generate_series(1, 100) AS i;
+-- 2. Insert 20 data ke tabel events
+INSERT INTO events (title, description, location, start_date, end_date, status, created_at) VALUES
+('Latihan Dasar Kepemimpinan (LDK)', 'Pelatihan kepemimpinan dan manajemen organisasi bagi anggota baru.', 'Auditorium Gedung Utama Lt. 3', NOW() - INTERVAL '20 days', NOW() - INTERVAL '18 days', 'done', NOW() - INTERVAL '25 days'),
+('Workshop UI/UX Design', 'Praktik desain antarmuka pengguna berbasis Figma untuk aplikasi mobile.', 'Lab Komputer Multimedia', NOW() - INTERVAL '15 days', NOW() - INTERVAL '15 days' + INTERVAL '4 hours', 'done', NOW() - INTERVAL '22 days'),
+('Seminar Web Development Modern', 'Eksplorasi tren teknologi backend dan frontend masa kini.', 'Aula Graha Saintek Lt. 1', NOW() - INTERVAL '10 days', NOW() - INTERVAL '10 days' + INTERVAL '3 hours', 'done', NOW() - INTERVAL '20 days'),
+('Bakti Sosial Mahasiswa', 'Penyaluran bantuan sosial dan sembako ke panti asuhan sekitar kampus.', 'Panti Asuhan Kasih Bunda', NOW() - INTERVAL '7 days', NOW() - INTERVAL '7 days' + INTERVAL '5 hours', 'done', NOW() - INTERVAL '18 days'),
+('Rapat Kerja Tahunan', 'Pembahasan program kerja dan penetapan anggaran tahunan organisasi.', 'Ruang Rapat Utama Lt. 2', NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days' + INTERVAL '6 hours', 'done', NOW() - INTERVAL '15 days'),
+('Makrab Anggota Baru', 'Malam keakraban untuk mempererat silaturahmi seluruh anggota.', 'Villa Kusuma Agro Batu', NOW() - INTERVAL '1 day', NOW() + INTERVAL '1 day', 'in progress', NOW() - INTERVAL '14 days'),
+('Lomba Coding Hackathon', 'Kompetisi pengembangan aplikasi solutif dalam waktu 24 jam.', 'Hall Gedung Sipil', NOW() + INTERVAL '2 days', NOW() + INTERVAL '3 days', 'Not started', NOW() - INTERVAL '10 days'),
+('Pelatihan Public Speaking', 'Pelatihan teknik komunikasi dan presentasi efektif di depan publik.', 'Ruang Seminar Lt. 2', NOW() + INTERVAL '5 days', NOW() + INTERVAL '5 days' + INTERVAL '3 hours', 'Not started', NOW() - INTERVAL '9 days'),
+('Studi Banding Organisasi', 'Kunjungan kerja ke himpunan mahasiswa universitas mitra.', 'Universitas Brawijaya', NOW() + INTERVAL '7 days', NOW() + INTERVAL '7 days' + INTERVAL '6 hours', 'Not started', NOW() - INTERVAL '8 days'),
+('Pekan Olahraga Mahasiswa', 'Turnamen futsal, basket, dan badminton antar jurusan.', 'Gor Pertiwi Kampus', NOW() + INTERVAL '10 days', NOW() + INTERVAL '14 days', 'Not started', NOW() - INTERVAL '7 days'),
+('Workshop Git & GitHub Collaboration', 'Praktik alur kerja git commit, pull request, dan branching team.', 'Lab Komputer 2', NOW() + INTERVAL '15 days', NOW() + INTERVAL '15 days' + INTERVAL '3 hours', 'Not started', NOW() - INTERVAL '6 days'),
+('Bincang Karir & Alumni', 'Sharing session bersama alumni mengenai prospek kerja industri IT.', 'Auditorium Gedung Utama Lt. 3', NOW() + INTERVAL '18 days', NOW() + INTERVAL '18 days' + INTERVAL '4 hours', 'Not started', NOW() - INTERVAL '5 days'),
+('Musyawarah Besar (MUBES)', 'Sidang pleno pembahasan AD/ART dan pemilihan ketua umum baru.', 'Ruang Sidang Lt. 3', NOW() + INTERVAL '21 days', NOW() + INTERVAL '22 days', 'Not started', NOW() - INTERVAL '4 days'),
+('Pameran Karya Teknologi', 'Showcase produk inovasi teknologi buatan mahasiswa.', 'Lobby Gedung Kuliah Bersama', NOW() + INTERVAL '25 days', NOW() + INTERVAL '26 days', 'Not started', NOW() - INTERVAL '3 days'),
+('Pelatihan Jurnalistik Kampus', 'Pelatihan penulisan berita, fotografi acara, dan publikasi media sosial.', 'Ruang Rapat B Lt. 2', NOW() + INTERVAL '28 days', NOW() + INTERVAL '28 days' + INTERVAL '3 hours', 'Not started', NOW() - INTERVAL '2 days'),
+('Webinar Cloud Computing', 'Pengenalan arsitektur cloud server dan deployment aplikasi.', 'Zoom Meeting Online', NOW() + INTERVAL '30 days', NOW() + INTERVAL '30 days' + INTERVAL '2 hours', 'Not started', NOW() - INTERVAL '1 day'),
+('Fokus Group Discussion (FGD)', 'Diskusi terarah evaluasi kurikulum dan kebutuhan skill industri.', 'Ruang Diskusi Lantai 1', NOW() + INTERVAL '32 days', NOW() + INTERVAL '32 days' + INTERVAL '2 hours', 'Not started', NOW()),
+('Festival Budaya Kampus', 'Pentas seni tradisional dan bazar kuliner mahasiswa.', 'Lapangan Terbuka Kampus', NOW() + INTERVAL '35 days', NOW() + INTERVAL '36 days', 'Not started', NOW()),
+('Donasi & Kunjungan Panti Asuhan', 'Kegiatan berbagi berkah dan santunan anak yatim.', 'Yayasan Harapan Bangsa', NOW() + INTERVAL '40 days', NOW() + INTERVAL '40 days' + INTERVAL '4 hours', 'Not started', NOW()),
+('Evaluasi Akhir Periode', 'Rapat evaluasi menyeluruh kinerja pengurus akhir masa bakti.', 'Ruang Rapat Utama Lt. 2', NOW() + INTERVAL '45 days', NOW() + INTERVAL '45 days' + INTERVAL '5 hours', 'Not started', NOW());
 
--- 4. Insert 100 data ke tabel user_events
-INSERT INTO user_events (user_id, event_id, role, created_at)
-SELECT
-    i,
-    ((i - 1) % 100) + 1,
-    (ARRAY['Admin', 'Member']::user_role[])[FLOOR(RANDOM() * 2 + 1)],
-    NOW() - (i || ' days')::INTERVAL
-FROM generate_series(1, 100) AS i;
+-- 3. Insert 20 data ke tabel meetings
+INSERT INTO meetings (event_id, title, location, start_date, end_date, status, created_at) VALUES
+(1, 'Technical Meeting LDK', 'Ruang Kelas 101', NOW() - INTERVAL '22 days', NOW() - INTERVAL '22 days' + INTERVAL '2 hours', 'done', NOW() - INTERVAL '25 days'),
+(1, 'Gladi Bersih Pembukaan LDK', 'Auditorium Gedung Utama Lt. 3', NOW() - INTERVAL '21 days', NOW() - INTERVAL '21 days' + INTERVAL '3 hours', 'done', NOW() - INTERVAL '24 days'),
+(2, 'Briefing Pemateri Workshop UI/UX', 'Ruang Dosen Lt. 2', NOW() - INTERVAL '16 days', NOW() - INTERVAL '16 days' + INTERVAL '1 hour', 'done', NOW() - INTERVAL '22 days'),
+(2, 'Sesi Praktik Desain UI/UX', 'Lab Komputer Multimedia', NOW() - INTERVAL '15 days', NOW() - INTERVAL '15 days' + INTERVAL '3 hours', 'done', NOW() - INTERVAL '20 days'),
+(3, 'Persiapan Audio Visual Seminar', 'Aula Graha Saintek Lt. 1', NOW() - INTERVAL '11 days', NOW() - INTERVAL '11 days' + INTERVAL '2 hours', 'done', NOW() - INTERVAL '19 days'),
+(4, 'Packing Paket Sembako Baksos', 'Sekretariat Himpunan', NOW() - INTERVAL '8 days', NOW() - INTERVAL '8 days' + INTERVAL '4 hours', 'done', NOW() - INTERVAL '17 days'),
+(5, 'Sidang Komisi Raker Anggaran', 'Ruang Rapat Utama Lt. 2', NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days' + INTERVAL '3 hours', 'done', NOW() - INTERVAL '14 days'),
+(6, 'Briefing Keberangkatan Makrab', 'Parkir Timur Kampus', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day' + INTERVAL '1 hour', 'in progress', NOW() - INTERVAL '10 days'),
+(6, 'Api Unggun & Sesi Keakraban', 'Area Terbuka Villa Batu', NOW(), NOW() + INTERVAL '2 hours', 'in progress', NOW() - INTERVAL '9 days'),
+(7, 'Technical Meeting Hackathon', 'Zoom Meeting Online', NOW() + INTERVAL '1 day', NOW() + INTERVAL '1 day' + INTERVAL '2 hours', 'Not started', NOW() - INTERVAL '8 days'),
+(7, 'Check-in & Kickoff Hackathon', 'Hall Gedung Sipil', NOW() + INTERVAL '2 days', NOW() + INTERVAL '2 days' + INTERVAL '1 hour', 'Not started', NOW() - INTERVAL '7 days'),
+(8, 'Sesi Latihan Vokal & Body Language', 'Ruang Seminar Lt. 2', NOW() + INTERVAL '5 days', NOW() + INTERVAL '5 days' + INTERVAL '2 hours', 'Not started', NOW() - INTERVAL '6 days'),
+(9, 'Koordinasi Rundown Studi Banding', 'Sekretariat Himpunan', NOW() + INTERVAL '6 days', NOW() + INTERVAL '6 days' + INTERVAL '2 hours', 'Not started', NOW() - INTERVAL '5 days'),
+(10, 'Drawing Skema Pertandingan Futsal', 'Gor Pertiwi Kampus', NOW() + INTERVAL '9 days', NOW() + INTERVAL '9 days' + INTERVAL '2 hours', 'Not started', NOW() - INTERVAL '4 days'),
+(11, 'Instalasi Git Client Peserta', 'Lab Komputer 2', NOW() + INTERVAL '14 days', NOW() + INTERVAL '14 days' + INTERVAL '2 hours', 'Not started', NOW() - INTERVAL '3 days'),
+(12, 'Briefing Moderator Bincang Karir', 'Ruang Tamu Dosen', NOW() + INTERVAL '17 days', NOW() + INTERVAL '17 days' + INTERVAL '1 hour', 'Not started', NOW() - INTERVAL '2 days'),
+(13, 'Verifikasi Berkas Calon Ketua MUBES', 'Ruang Sidang Lt. 3', NOW() + INTERVAL '20 days', NOW() + INTERVAL '20 days' + INTERVAL '2 hours', 'Not started', NOW() - INTERVAL '1 day'),
+(14, 'Penataan Booth Pameran Karya', 'Lobby Gedung Kuliah Bersama', NOW() + INTERVAL '24 days', NOW() + INTERVAL '24 days' + INTERVAL '4 hours', 'Not started', NOW()),
+(15, 'Sesi Penulisan Artikel Jurnalistik', 'Ruang Rapat B Lt. 2', NOW() + INTERVAL '28 days', NOW() + INTERVAL '28 days' + INTERVAL '2 hours', 'Not started', NOW()),
+(16, 'Dry Run Webinar Cloud Computing', 'Zoom Meeting Online', NOW() + INTERVAL '29 days', NOW() + INTERVAL '29 days' + INTERVAL '1 hour', 'Not started', NOW());
 
--- 5. Insert 100 data ke tabel user_meetings
-INSERT INTO user_meetings (user_id, meeting_id, attendance_method, created_at)
-SELECT
-    i,
-    i,
-    (ARRAY['Qr', 'Manually']::attendance_method[])[FLOOR(RANDOM() * 2 + 1)],
-    NOW() - (i || ' days')::INTERVAL
-FROM generate_series(1, 100) AS i;
+-- 4. Insert 20 data ke tabel user_events
+INSERT INTO user_events (user_id, event_id, role, created_at) VALUES
+(1, 1, 'Admin', NOW() - INTERVAL '25 days'),
+(2, 1, 'Admin', NOW() - INTERVAL '25 days'),
+(3, 1, 'Member', NOW() - INTERVAL '24 days'),
+(4, 2, 'Member', NOW() - INTERVAL '22 days'),
+(5, 2, 'Member', NOW() - INTERVAL '22 days'),
+(6, 3, 'Member', NOW() - INTERVAL '20 days'),
+(7, 3, 'Admin', NOW() - INTERVAL '20 days'),
+(8, 4, 'Member', NOW() - INTERVAL '18 days'),
+(9, 4, 'Member', NOW() - INTERVAL '18 days'),
+(10, 5, 'Admin', NOW() - INTERVAL '15 days'),
+(11, 5, 'Member', NOW() - INTERVAL '15 days'),
+(12, 6, 'Member', NOW() - INTERVAL '14 days'),
+(13, 6, 'Member', NOW() - INTERVAL '14 days'),
+(14, 7, 'Member', NOW() - INTERVAL '10 days'),
+(15, 7, 'Member', NOW() - INTERVAL '10 days'),
+(16, 8, 'Member', NOW() - INTERVAL '9 days'),
+(17, 9, 'Member', NOW() - INTERVAL '8 days'),
+(18, 10, 'Member', NOW() - INTERVAL '7 days'),
+(19, 11, 'Admin', NOW() - INTERVAL '6 days'),
+(20, 12, 'Member', NOW() - INTERVAL '5 days');
+
+-- 5. Insert 20 data ke tabel user_meetings
+INSERT INTO user_meetings (user_id, meeting_id, attendance_method, created_at) VALUES
+(1, 1, 'Qr', NOW() - INTERVAL '22 days'),
+(2, 1, 'Qr', NOW() - INTERVAL '22 days'),
+(3, 1, 'Manually', NOW() - INTERVAL '22 days'),
+(4, 3, 'Qr', NOW() - INTERVAL '16 days'),
+(5, 4, 'Qr', NOW() - INTERVAL '15 days'),
+(6, 5, 'Manually', NOW() - INTERVAL '11 days'),
+(7, 5, 'Qr', NOW() - INTERVAL '11 days'),
+(8, 6, 'Qr', NOW() - INTERVAL '8 days'),
+(9, 6, 'Manually', NOW() - INTERVAL '8 days'),
+(10, 7, 'Qr', NOW() - INTERVAL '3 days'),
+(11, 7, 'Qr', NOW() - INTERVAL '3 days'),
+(12, 8, 'Qr', NOW() - INTERVAL '1 day'),
+(13, 8, 'Manually', NOW() - INTERVAL '1 day'),
+(14, 9, 'Qr', NOW()),
+(15, 9, 'Qr', NOW()),
+(16, 2, 'Qr', NOW() - INTERVAL '21 days'),
+(17, 2, 'Manually', NOW() - INTERVAL '21 days'),
+(18, 4, 'Qr', NOW() - INTERVAL '15 days'),
+(19, 3, 'Qr', NOW() - INTERVAL '16 days'),
+(20, 7, 'Manually', NOW() - INTERVAL '3 days');

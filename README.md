@@ -43,23 +43,65 @@ Salin file konfigurasi `.env.example` menjadi `.env`:
 ```bash
 cp .env.example .env
 ```
-Sesuaikan parameter database di dalam file `.env`:
+Sesuaikan parameter database dan konfigurasi di dalam file `.env`:
 ```env
 DB_HOST=127.0.0.1
 DB_PORT=5432
 DB_NAME=pbl_db
 DB_USER=postgres
 DB_PASS=password_anda
+LOG_MAX_SIZE=5M
 ```
 
-### 3. Menjalankan Server Lokal
-Jalankan built-in web server PHP:
+### 3. Migrasi Database
+Jalankan migrasi untuk membuat tabel dan struktur skema:
 ```bash
-php -S localhost:8080 -t public/
+php migration up
+# atau jika file memiliki izin eksekusi
+./migration up
+```
+
+Perintah migrasi lainnya:
+```bash
+php migration down            # Rollback 1 migrasi terakhir
+php migration create <nama>   # Buat file template migrasi baru
+php migration seed            # Isi dummy data (20 data per tabel)
+```
+
+### 4. Menjalankan Server Lokal
+Jalankan built-in web server PHP menggunakan script router:
+```bash
+# Mode standar
+php -S localhost:8080 router.php
+
+# Mode hening (menghilangkan log internal Accepted/Closing dari PHP)
+php -q -S localhost:8080 router.php
 ```
 Akses aplikasi melalui browser di `http://localhost:8080`.
 
-### 4. Pengecekan Sintaks PHP
+### 5. Konvensi Routing & Clean URL
+Sistem routing berbasis file (`router.php`) di dalam folder `public/`:
+- **Clean URL**: Akses file PHP tanpa ekstensi `.php` (misal: `/admin/event` -> `public/admin/event/index.php`, `/login_handler` -> `public/login_handler.php`).
+- **Dynamic Path Parameter**:
+  - File `[param].php`: Menangkap segmen URL terakhir (misal `/event/123` dipetakan ke `public/event/[id].php`).
+  - Folder `[param]/`: Menangkap segmen URL dinamis di tengah/akhir (misal `/event/123/edit` dipetakan ke `public/event/[id]/edit.php`).
+- Nilai parameter otomatis tersedia di `$_GET['param']` dan variabel `$route_params['param']`.
+- **Role & Auth Guard**:
+  - `/login`: Pengguna yang sudah login diarahkan otomatis ke `/admin/event` (Admin) atau `/` (Member).
+  - `/admin/*`: Diproteksi penuh oleh `require_role('Admin')`. Jika belum login diarahkan ke `/login?error=Login is required`, dan jika role bukan Admin mengembalikan respon `403 Forbidden`.
+  - Helper otorisasi tersedia di `config/session.php`: `is_logged_in()`, `current_user()`, `current_role()`, `has_role($role)`, `require_login()`, dan `require_role($role)`.
+
+### 6. Sistem Logging (`config/logger.php`)
+- **Lokasi File Log**: `log/app.log` (rotasi otomatis ke `log/<epoch>.log` jika melebihi ukuran `LOG_MAX_SIZE`).
+- **Pencatatan Otomatis**: Setiap request dynamic yang diproses oleh `router.php` otomatis dicatat ke file log dan terminal:
+  ```text
+  [YYYY-MM-DD HH:MM:SS] [INFO] <ip> <method> <path> -> <target_route>
+  ```
+- **Helper Fungsi Manual**:
+  - `write_log(string $message, string $level = 'INFO', array $context = []): void`
+  - `logger(string $message, string $level = 'INFO', array $context = []): void`
+
+### 7. Pengecekan Sintaks PHP
 ```bash
 find . -name "*.php" -not -path "*/.*" -exec php -l {} +
 ```
