@@ -1,0 +1,26 @@
+{
+	frankenphp {
+		worker /app/worker.php 4
+	}
+	order php_server before file_server
+	order php before file_server
+}
+
+:80 {
+	root * /app/public
+	encode zstd gzip
+
+	@static {
+		file
+		not path *.php
+	}
+	handle @static {
+		file_server
+	}
+
+	handle {
+		root * /app
+		rewrite * /worker.php
+		php
+	}
+}
