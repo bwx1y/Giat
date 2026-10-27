@@ -12,6 +12,7 @@ if ($uri !== '/' && file_exists($file) && !is_dir($file) && pathinfo($file, PATH
 }
 
 // 3. Resolver untuk clean URL dan dynamic path parameter [param]
+if (!function_exists('resolveRoute')) {
 function resolveRoute(string $baseDir, string $uri): ?array {
     $path = trim($uri, '/');
     $baseDir = rtrim($baseDir, '/');
@@ -91,6 +92,7 @@ function resolveRoute(string $baseDir, string $uri): ?array {
 
     return null;
 }
+}
 
 // 4. Resolver & Access Logger
 $resolved = resolveRoute(__DIR__ . '/public', $uri);
@@ -102,14 +104,14 @@ write_log("$ip $method $uri -> $target", 'INFO');
 // 5. Role & Auth Guard
 $cleanPath = '/' . trim($uri, '/');
 
-if ($cleanPath === '/login' && is_logged_in()) {
-    header("Location: " . (has_role('Admin') ? '/admin/event' : '/'));
-    exit;
-}
-
-if ($cleanPath === '/admin' || str_starts_with($cleanPath, '/admin/')) {
-    require_role('Admin');
-}
+//if ($cleanPath === '/login' && is_logged_in()) {
+//    header("Location: " . (has_role('Admin') ? '/admin/event' : '/'));
+//    exit;
+//}
+//
+//if ($cleanPath === '/admin' || str_starts_with($cleanPath, '/admin/')) {
+//    require_role('Admin');
+//}
 
 if ($resolved !== null) {
     foreach ($resolved['params'] as $key => $value) {
