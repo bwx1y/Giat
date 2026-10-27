@@ -35,6 +35,9 @@ try {
     $applicationDb = new PDO($dsn, $user, $pass, $options);
     return $applicationDb;
 } catch (PDOException $e) {
+    if (function_exists('write_log')) {
+        write_log("Database connection failed: " . $e->getMessage(), 'CRITICAL');
+    }
     http_response_code(500);
 
     die("Error database connection: " . $e->getMessage());
