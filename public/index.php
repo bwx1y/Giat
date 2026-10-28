@@ -1,8 +1,16 @@
 <?php
+require_once __DIR__ . '/../config/init.php';
+
+$isLoggedIn = is_logged_in();
+$currentUser = $isLoggedIn ? current_user() : null;
+
 require_once __DIR__ . '/components/header.php';
-require_once __DIR__ . '/components/login.php';
+
+if (!$isLoggedIn):
+    require_once __DIR__ . '/components/login.php';
+else:
 ?>
-<div id="app-shell" class="d-flex min-vh-100 w-100" style="display:none;">
+<div id="app-shell" class="d-flex min-vh-100 w-100">
   <div id="sidebar-overlay" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;"></div>
   <?php require_once __DIR__ . '/components/sidebar.php'; ?>
   <div class="d-flex flex-column flex-fill min-w-0" id="main-wrapper">
@@ -26,4 +34,10 @@ require_once __DIR__ . '/components/login.php';
 <?php
 require_once __DIR__ . '/components/modals.php';
 require_once __DIR__ . '/components/toast.php';
+?>
+<script>
+  window.currentUser = <?= json_encode($currentUser) ?>;
+</script>
+<?php
+endif;
 require_once __DIR__ . '/components/footer.php';

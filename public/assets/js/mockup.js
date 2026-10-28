@@ -326,10 +326,7 @@ let currentRole = 'superadmin';
     }
 
     function doLogout() {
-      destroyCharts();
-      document.getElementById('app-shell').style.display = 'none';
-      document.getElementById('login-page').style.display = 'flex';
-      showToast('Berhasil keluar dari sistem', 'info');
+      window.location.href = '/logout';
     }
 
     function applyRoleUI(role) {
@@ -1422,4 +1419,23 @@ let currentRole = 'superadmin';
         div.style.transform = 'translateX(20px)';
         setTimeout(() => div.remove(), 300);
       }, 3200);
+    }
+
+if (typeof window !== 'undefined' && window.currentUser) {
+      document.addEventListener('DOMContentLoaded', function () {
+        const r = (window.currentUser.role || 'Member').toLowerCase();
+        const roleKey = (r === 'admin') ? 'superadmin' : 'member';
+        currentRole = roleKey;
+        if (userInfo[roleKey]) {
+          userInfo[roleKey].name = window.currentUser.full_name || window.currentUser.username;
+          userInfo[roleKey].role = window.currentUser.role;
+          const initials = (window.currentUser.full_name || window.currentUser.username || 'US')
+            .split(' ').filter(Boolean).map(w => w[0]).join('').substring(0, 2).toUpperCase();
+          userInfo[roleKey].initials = initials;
+        }
+        applyRoleUI(roleKey);
+        buildSidebar(roleKey);
+        setUserInfo(roleKey);
+        navTo(defaultPage[roleKey]);
+      });
     }
