@@ -8,7 +8,27 @@ $uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 // 2. Jika request ke file statis (CSS, JS, Gambar), sajikan langsung
 $file = __DIR__ . '/public' . $uri;
 if ($uri !== '/' && file_exists($file) && !is_dir($file) && pathinfo($file, PATHINFO_EXTENSION) !== 'php') {
-    return false;
+    $mimes = [
+        'css' => 'text/css',
+        'js' => 'text/javascript',
+        'json' => 'application/json',
+        'png' => 'image/png',
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'gif' => 'image/gif',
+        'svg' => 'image/svg+xml',
+        'ico' => 'image/x-icon',
+        'woff' => 'font/woff',
+        'woff2' => 'font/woff2',
+        'ttf' => 'font/ttf',
+        'map' => 'application/json',
+    ];
+    $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+    $mime = $mimes[$ext] ?? (function_exists('mime_content_type') ? mime_content_type($file) : 'application/octet-stream');
+    header("Content-Type: $mime");
+    header("Content-Length: " . filesize($file));
+    readfile($file);
+    exit;
 }
 
 // 3. Resolver untuk clean URL dan dynamic path parameter [param]
