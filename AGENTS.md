@@ -74,7 +74,7 @@
 - **Database Migrations**:
   ```bash
   php migration up            # Run pending migrations
-  php migration down          # Rollback last migration
+  php migration down          # Rollback migrations (newest to oldest)
   php migration create <name> # Scaffold new migration file
   php migration seed          # Seed dummy data (20 records per table)
   ```

@@ -1,11 +1,11 @@
 <?php
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header("Location: /index.php");
+    header("Location: /");
     exit;
 }
 
-$redirectTo = $_SERVER['HTTP_REFERER'] ?? '/index.php';
+$redirectTo = $_SERVER['HTTP_REFERER'] ?? '/';
 
 $data = validate([
     'username' => 'required|string',
@@ -32,7 +32,7 @@ if ($entity && password_verify($data['password'], $entity['password'])) {
     }
 
     set_user_session($entity);
-    header("Location: /index.php");
+    header("Location: /");
     exit;
 }
 

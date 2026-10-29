@@ -9,7 +9,7 @@ $status = $_GET['status'] ?? null;
 $filter = [
     [
         'key' => 'search',
-        'query' => 'title ILIKE :search',
+        'query' => 'title LIKE :search',
         'value' => $search ? "$search%" : null,
     ],
     [
