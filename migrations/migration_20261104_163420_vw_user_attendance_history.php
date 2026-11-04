@@ -35,7 +35,8 @@ LEFT JOIN user_meetings um
     ON um.meeting_id = m.id 
    AND um.user_id = ue.user_id 
    AND um.deleted_at IS NULL
-WHERE ue.deleted_at IS NULL");
+WHERE ue.deleted_at IS NULL
+ORDER BY raw_date ASC");
     }
 
     public function down(PDO $pdo): void {
