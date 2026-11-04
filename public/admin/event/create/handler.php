@@ -25,4 +25,6 @@ $stmt->execute([
     'status' => $body['status'] ?? 'Not started',
 ]);
 
-header('Location: /admin/event/update?id=' . $stmt->lastInsertId());
+$newEventId = $stmt->fetchColumn();
+
+header('Location: /admin/event/' . $newEventId . '/update');
