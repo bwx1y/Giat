@@ -2,270 +2,10 @@ let currentRole = 'superadmin';
     let currentPage = 'dashboard';
     let currentActiveEventId = 1;
     let currentActiveSubEventId = 101;
+    let pendingDeleteEventId = null;
+    const eventCrudFlashStorageKey = 'eventCrudFlash';
     let qrTimerInterval = null;
     let chartInstances = {};
-
-    let members = [
-      { id: 'A001', name: 'Andi Pratama', div: 'Divisi Teknologi', hadir: 16, absen: 2, point: 46, status: 'Aktif' },
-      { id: 'A002', name: 'Rizky Ramadhan', div: 'Divisi Kreatif', hadir: 15, absen: 3, point: 42, status: 'Aktif' },
-      { id: 'A003', name: 'Siti Aulia', div: 'Divisi Humas', hadir: 14, absen: 4, point: 38, status: 'Aktif' },
-      { id: 'A004', name: 'Fajar Nugraha', div: 'Divisi Teknologi', hadir: 13, absen: 5, point: 34, status: 'Aktif' },
-      { id: 'A005', name: 'Dina Maharani', div: 'Divisi Keuangan', hadir: 12, absen: 6, point: 30, status: 'Aktif' },
-      { id: 'A006', name: 'Bimo Santoso', div: 'Divisi Akademik', hadir: 11, absen: 7, point: 26, status: 'Aktif' },
-      { id: 'A007', name: 'Layla Sari', div: 'Divisi Humas', hadir: 10, absen: 8, point: 22, status: 'Non-Aktif' },
-      { id: 'A008', name: 'Hendra Kurnia', div: 'Divisi Kreatif', hadir: 9, absen: 9, point: 18, status: 'Non-Aktif' },
-    ];
-
-    let eventsData = [
-      {
-        id: 1,
-        name: 'Webinar Nasional 2026',
-        desc: 'Webinar berskala nasional membahas tren kecerdasan buatan dan inovasi teknologi terkini.',
-        startDate: '10 Sep 2026',
-        endDate: '20 Sep 2026',
-        dateRange: '10 - 20 September 2026',
-        loc: 'Hybrid (Aula Utama & Zoom)',
-        totalPeserta: 120,
-        status: 'Active',
-        subEvents: [
-          {
-            id: 101,
-            name: 'Rapat Persiapan 1',
-            date: '12 Sep 2026',
-            time: '19:00 - 21:00',
-            loc: 'Ruang Meeting A',
-            pic: 'Budi Santoso',
-            total: 40,
-            hadir: 38,
-            status: 'Finished',
-            desc: 'Koordinasi awal pembagian divisi dan teknis acara.',
-            participants: [
-              { name: 'Andi Pratama', div: 'Divisi Teknologi', status: 'Hadir', time: '19:04', method: 'QR', point: 3 },
-              { name: 'Rizky Ramadhan', div: 'Divisi Kreatif', status: 'Hadir', time: '19:07', method: 'QR', point: 3 },
-              { name: 'Siti Aulia', div: 'Divisi Humas', status: 'Hadir', time: '19:12', method: 'QR', point: 3 },
-              { name: 'Fajar Nugraha', div: 'Divisi Teknologi', status: 'Hadir', time: '19:15', method: 'Manual', point: 3 },
-              { name: 'Dina Maharani', div: 'Divisi Keuangan', status: 'Tidak Hadir', time: '—', method: '—', point: -1 },
-              { name: 'Bimo Santoso', div: 'Divisi Akademik', status: 'Tidak Hadir', time: '—', method: '—', point: -1 },
-            ]
-          },
-          {
-            id: 102,
-            name: 'Rapat Persiapan 2',
-            date: '14 Sep 2026',
-            time: '19:00 - 21:00',
-            loc: 'Ruang Meeting A',
-            pic: 'Budi Santoso',
-            total: 40,
-            hadir: 35,
-            status: 'Finished',
-            desc: 'Finalisasi rundown, konsumsi, dan kesiapan pembicara.',
-            participants: [
-              { name: 'Andi Pratama', div: 'Divisi Teknologi', status: 'Hadir', time: '19:02', method: 'QR', point: 3 },
-              { name: 'Rizky Ramadhan', div: 'Divisi Kreatif', status: 'Hadir', time: '19:05', method: 'QR', point: 3 },
-              { name: 'Siti Aulia', div: 'Divisi Humas', status: 'Tidak Hadir', time: '—', method: '—', point: -1 },
-              { name: 'Fajar Nugraha', div: 'Divisi Teknologi', status: 'Hadir', time: '19:10', method: 'QR', point: 3 },
-            ]
-          },
-          {
-            id: 103,
-            name: 'Technical Meeting',
-            date: '17 Sep 2026',
-            time: '18:00 - 20:00',
-            loc: 'Zoom Meeting',
-            pic: 'Andi Pratama',
-            total: 100,
-            hadir: 0,
-            status: 'Upcoming',
-            desc: 'Uji coba platform streaming dan gladi kotor panitia.',
-            participants: [
-              { name: 'Andi Pratama', div: 'Divisi Teknologi', status: 'Belum Hadir', time: '—', method: '—', point: 0 },
-              { name: 'Rizky Ramadhan', div: 'Divisi Kreatif', status: 'Belum Hadir', time: '—', method: '—', point: 0 },
-              { name: 'Siti Aulia', div: 'Divisi Humas', status: 'Belum Hadir', time: '—', method: '—', point: 0 },
-            ]
-          },
-          {
-            id: 104,
-            name: 'Pelaksanaan Webinar',
-            date: '20 Sep 2026',
-            time: '08:00 - 13:00',
-            loc: 'Aula Utama & Live Stream',
-            pic: 'Rizky Ramadhan',
-            total: 120,
-            hadir: 0,
-            status: 'Upcoming',
-            desc: 'Hari H pelaksanaan sesi utama bersama narasumber nasional.',
-            participants: []
-          },
-          {
-            id: 105,
-            name: 'Rapat Evaluasi',
-            date: '22 Sep 2026',
-            time: '19:00 - 21:00',
-            loc: 'Ruang Meeting B',
-            pic: 'Budi Santoso',
-            total: 35,
-            hadir: 0,
-            status: 'Upcoming',
-            desc: 'Laporan pertanggungjawaban divisi dan review kegiatan.',
-            participants: []
-          }
-        ]
-      },
-      {
-        id: 2,
-        name: 'Workshop UI/UX',
-        desc: 'Pelatihan intensif perancangan antarmuka dan pengalaman pengguna modern berbasis Figma.',
-        startDate: '23 Agu 2026',
-        endDate: '30 Agu 2026',
-        dateRange: '23 - 30 Agustus 2026',
-        loc: 'Lab Komputer 3 & Online',
-        totalPeserta: 40,
-        status: 'Finished',
-        subEvents: [
-          {
-            id: 201,
-            name: 'Briefing',
-            date: '23 Agu 2026',
-            time: '16:00 - 18:00',
-            loc: 'Google Meet',
-            pic: 'Andi Pratama',
-            total: 40,
-            hadir: 38,
-            status: 'Finished',
-            desc: 'Pengenalan kurikulum dan instalasi tools Figma.',
-            participants: [
-              { name: 'Andi Pratama', div: 'Divisi Teknologi', status: 'Hadir', time: '16:05', method: 'QR', point: 3 },
-              { name: 'Siti Aulia', div: 'Divisi Humas', status: 'Hadir', time: '16:10', method: 'QR', point: 3 },
-            ]
-          },
-          {
-            id: 202,
-            name: 'Technical Meeting',
-            date: '24 Agu 2026',
-            time: '19:00 - 20:30',
-            loc: 'Zoom Meeting',
-            pic: 'Budi Santoso',
-            total: 40,
-            hadir: 37,
-            status: 'Finished',
-            desc: 'Pengecekan akun dan pembagian kelompok studi kasus.',
-            participants: [
-              { name: 'Andi Pratama', div: 'Divisi Teknologi', status: 'Hadir', time: '19:03', method: 'QR', point: 3 },
-              { name: 'Rizky Ramadhan', div: 'Divisi Kreatif', status: 'Hadir', time: '19:04', method: 'QR', point: 3 },
-            ]
-          },
-          {
-            id: 203,
-            name: 'Workshop Day 1',
-            date: '27 Agu 2026',
-            time: '09:00 - 15:00',
-            loc: 'Lab Komputer 3',
-            pic: 'Andi Pratama',
-            total: 40,
-            hadir: 36,
-            status: 'Finished',
-            desc: 'Sesi Design Thinking, User Persona, dan Wireframing.',
-            participants: [
-              { name: 'Andi Pratama', div: 'Divisi Teknologi', status: 'Hadir', time: '09:02', method: 'QR', point: 3 },
-            ]
-          },
-          {
-            id: 204,
-            name: 'Workshop Day 2',
-            date: '28 Agu 2026',
-            time: '09:00 - 15:00',
-            loc: 'Lab Komputer 3',
-            pic: 'Andi Pratama',
-            total: 40,
-            hadir: 35,
-            status: 'Finished',
-            desc: 'Interactive Prototyping & Usability Testing.',
-            participants: [
-              { name: 'Andi Pratama', div: 'Divisi Teknologi', status: 'Hadir', time: '09:05', method: 'QR', point: 3 },
-            ]
-          },
-          {
-            id: 205,
-            name: 'Evaluasi',
-            date: '30 Agu 2026',
-            time: '14:00 - 16:00',
-            loc: 'Google Meet',
-            pic: 'Rina Wijaya',
-            total: 40,
-            hadir: 34,
-            status: 'Finished',
-            desc: 'Presentasi hasil karya dan pemberian feedback juri.',
-            participants: []
-          }
-        ]
-      },
-      {
-        id: 3,
-        name: 'Musyawarah Organisasi',
-        desc: 'Forum tahunan musyawarah pembahasan AD/ART dan suksesi kepemimpinan.',
-        startDate: '28 Sep 2026',
-        endDate: '05 Okt 2026',
-        dateRange: '28 Sep - 05 Okt 2026',
-        loc: 'Gedung Serbaguna Kampus',
-        totalPeserta: 85,
-        status: 'Upcoming',
-        subEvents: [
-          {
-            id: 301,
-            name: 'Rapat Persiapan',
-            date: '28 Sep 2026',
-            time: '19:00 - 21:00',
-            loc: 'Ruang Sidang 1',
-            pic: 'Hendra Kurnia',
-            total: 25,
-            hadir: 0,
-            status: 'Upcoming',
-            desc: 'Penyusunan tata tertib dan materi musyawarah.',
-            participants: []
-          },
-          {
-            id: 302,
-            name: 'Musyawarah Pleno',
-            date: '03 Okt 2026',
-            time: '08:00 - 17:00',
-            loc: 'Gedung Serbaguna',
-            pic: 'Budi Santoso',
-            total: 85,
-            hadir: 0,
-            status: 'Upcoming',
-            desc: 'Sidang pleno pembahasan AD/ART dan pemilihan ketua.',
-            participants: []
-          },
-          {
-            id: 303,
-            name: 'Evaluasi & Serah Terima',
-            date: '05 Okt 2026',
-            time: '13:00 - 16:00',
-            loc: 'Ruang Sidang 1',
-            pic: 'Rina Wijaya',
-            total: 40,
-            hadir: 0,
-            status: 'Upcoming',
-            desc: 'Penandatanganan berita acara dan serah terima jabatan.',
-            participants: []
-          }
-        ]
-      }
-    ];
-
-    let attendanceHistory = [
-      { id: 1, member: 'Andi Pratama', event: 'Webinar Nasional 2026', subEvent: 'Rapat Persiapan 1', date: '12 Sep 2026', status: 'Hadir', method: 'QR', point: 3 },
-      { id: 2, member: 'Andi Pratama', event: 'Webinar Nasional 2026', subEvent: 'Rapat Persiapan 2', date: '14 Sep 2026', status: 'Hadir', method: 'QR', point: 3 },
-      { id: 3, member: 'Andi Pratama', event: 'Webinar Nasional 2026', subEvent: 'Technical Meeting', date: '17 Sep 2026', status: 'Tidak Hadir', method: '—', point: -1 },
-      { id: 4, member: 'Rizky Ramadhan', event: 'Webinar Nasional 2026', subEvent: 'Rapat Persiapan 1', date: '12 Sep 2026', status: 'Hadir', method: 'QR', point: 3 },
-      { id: 5, member: 'Siti Aulia', event: 'Webinar Nasional 2026', subEvent: 'Rapat Persiapan 1', date: '12 Sep 2026', status: 'Hadir', method: 'QR', point: 3 },
-      { id: 6, member: 'Fajar Nugraha', event: 'Webinar Nasional 2026', subEvent: 'Rapat Persiapan 1', date: '12 Sep 2026', status: 'Hadir', method: 'Manual', point: 3 },
-      { id: 7, member: 'Dina Maharani', event: 'Webinar Nasional 2026', subEvent: 'Rapat Persiapan 1', date: '12 Sep 2026', status: 'Tidak Hadir', method: '—', point: -1 },
-      { id: 8, member: 'Andi Pratama', event: 'Workshop UI/UX', subEvent: 'Briefing', date: '23 Agu 2026', status: 'Hadir', method: 'QR', point: 3 },
-      { id: 9, member: 'Andi Pratama', event: 'Workshop UI/UX', subEvent: 'Technical Meeting', date: '24 Agu 2026', status: 'Hadir', method: 'QR', point: 3 },
-      { id: 10, member: 'Andi Pratama', event: 'Workshop UI/UX', subEvent: 'Workshop Day 1', date: '27 Agu 2026', status: 'Hadir', method: 'QR', point: 3 },
-      { id: 11, member: 'Andi Pratama', event: 'Workshop UI/UX', subEvent: 'Workshop Day 2', date: '28 Agu 2026', status: 'Hadir', method: 'QR', point: 3 },
-    ];
 
     const navConfig = {
       superadmin: [
@@ -435,18 +175,45 @@ let currentRole = 'superadmin';
     }
 
     function renderDashboardStats() {
-      let totalSubs = 0;
-      eventsData.forEach(ev => totalSubs += ev.subEvents.length);
-      document.getElementById('stat-total-events').textContent = eventsData.length;
-      document.getElementById('stat-total-subevents').textContent = totalSubs;
+      const db = window.dbDashboard;
+
+      if (db && db.stats) {
+        document.getElementById('stat-total-events').textContent = db.stats.totalEvents;
+        document.getElementById('stat-total-subevents').textContent = db.stats.totalSubEvents;
+        const tm = document.getElementById('stat-total-members');
+        if (tm) tm.textContent = db.stats.totalMembers;
+        const ta = document.getElementById('stat-avg-attendance');
+        if (ta) ta.textContent = db.stats.avgAttendance + '%';
+      } else {
+        let totalSubs = 0;
+        eventsData.forEach(ev => totalSubs += ev.subEvents.length);
+        document.getElementById('stat-total-events').textContent = eventsData.length;
+        document.getElementById('stat-total-subevents').textContent = totalSubs;
+      }
 
       const topContainer = document.getElementById('dashboard-top-members');
       topContainer.innerHTML = '';
-      const sorted = [...members].sort((a, b) => b.point - a.point).slice(0, 5);
-      sorted.forEach((m, idx) => {
-        const row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--slate-100);';
-        row.innerHTML = `
+
+      if (db && db.leaderboard && db.leaderboard.length > 0) {
+        db.leaderboard.forEach((m, idx) => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--slate-100);';
+          row.innerHTML = `
+      <div style="width:24px;height:24px;border-radius:50%;background:${idx === 0 ? '#fef3c7' : idx === 1 ? '#e2e8f0' : '#f1f5f9'};color:${idx === 0 ? '#d97706' : 'var(--navy)'};font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;">${idx + 1}</div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:13.5px;color:var(--navy);">${m.member_name}</div>
+        <div style="font-size:11px;color:var(--slate-400);">Hadir: ${m.hadir} sesi · Absen: ${m.absen} sesi</div>
+      </div>
+      <div style="font-size:14px;font-weight:800;color:var(--blue-600);">${m.point} pt</div>
+    `;
+          topContainer.appendChild(row);
+        });
+      } else {
+        const sorted = [...members].sort((a, b) => b.point - a.point).slice(0, 5);
+        sorted.forEach((m, idx) => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--slate-100);';
+          row.innerHTML = `
       <div style="width:24px;height:24px;border-radius:50%;background:${idx === 0 ? '#fef3c7' : idx === 1 ? '#e2e8f0' : '#f1f5f9'};color:${idx === 0 ? '#d97706' : 'var(--navy)'};font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;">${idx + 1}</div>
       <div style="flex:1;">
         <div style="font-weight:600;font-size:13.5px;color:var(--navy);">${m.name}</div>
@@ -454,19 +221,42 @@ let currentRole = 'superadmin';
       </div>
       <div style="font-size:14px;font-weight:800;color:var(--blue-600);">${m.point} pt</div>
     `;
-        topContainer.appendChild(row);
-      });
+          topContainer.appendChild(row);
+        });
+      }
 
       const tbody = document.getElementById('dashboard-events-tbody');
       tbody.innerHTML = '';
-      eventsData.forEach(ev => {
+
+      let eventList = eventsData;
+      if (db && db.events && db.events.length > 0) {
+        eventList = db.events.map(ev => ({
+          id: ev.id,
+          name: ev.title,
+          dateRange: (ev.start_date && ev.end_date)
+            ? (formatDateId(ev.start_date.split(' ')[0]) + ' s/d ' + formatDateId(ev.end_date.split(' ')[0]))
+            : 'Belum diatur',
+          subEvents: { length: parseInt(ev.sub_event_count) || 0 },
+          totalPeserta: parseInt(ev.member_count) || 0,
+          status: ev.status || 'Not started'
+        }));
+      } else if (db && Array.isArray(db.events) && db.events.length === 0) {
+        eventList = [];
+      }
+
+      if (eventList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--slate-400);">Tidak ada event yang ditemukan.</td></tr>';
+        return;
+      }
+
+      eventList.forEach(ev => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
       <td><strong>${ev.name}</strong></td>
       <td>${ev.dateRange}</td>
-      <td><span class="subevent-tree-badge"><i class="fa-solid fa-sitemap"></i> ${ev.subEvents.length} Sub Event</span></td>
+      <td><span class="subevent-tree-badge"><i class="fa-solid fa-sitemap"></i> ${ev.subEvents.length || 0} Sub Event</span></td>
       <td>${ev.totalPeserta} Peserta</td>
-      <td><span class="badge ${ev.status === 'Active' ? 'badge-blue' : ev.status === 'Upcoming' ? 'badge-amber' : 'badge-gray'}">${ev.status}</span></td>
+      <td><span class="badge ${ev.status === 'in progress' ? 'badge-blue' : ev.status === 'Not started' ? 'badge-amber' : 'badge-gray'}">${ev.status}</span></td>
       <td>
         <button class="action-link" onclick="openEventDetail(${ev.id})">Lihat Detail</button>
       </td>
@@ -477,9 +267,32 @@ let currentRole = 'superadmin';
 
     function renderEvents() {
       const grid = document.getElementById('event-grid');
+      if (!grid) return;
       grid.innerHTML = '';
 
-      eventsData.forEach(ev => {
+      let list = eventsData;
+      if (Array.isArray(window.dbEvents) && window.dbEvents.length > 0) {
+        list = window.dbEvents.map(ev => ({
+          id: ev.id,
+          name: ev.title || ev.name,
+          desc: ev.description || ev.desc || 'Tidak ada deskripsi kegiatan.',
+          dateRange: (ev.start_date && ev.end_date)
+            ? (formatDateId(ev.start_date.split(' ')[0]) + ' s/d ' + formatDateId(ev.end_date.split(' ')[0]))
+            : (ev.dateRange || 'Belum diatur'),
+          totalPeserta: ev.member_count !== undefined ? parseInt(ev.member_count) : (ev.totalPeserta || 0),
+          subEvents: ev.sub_event_count !== undefined ? { length: parseInt(ev.sub_event_count) } : (ev.subEvents || []),
+          status: ev.status || 'Not started'
+        }));
+      } else if (Array.isArray(window.dbEvents) && window.dbEvents.length === 0 && (window.location.search.indexOf('search=') !== -1 || window.location.search.indexOf('status=') !== -1)) {
+        list = [];
+      }
+
+      if (list.length === 0) {
+        grid.innerHTML = '<div class="text-navy" style="grid-column: 1 / -1; padding: 40px; text-align: center;">Tidak ada event yang ditemukan.</div>';
+        return;
+      }
+
+      list.forEach(ev => {
         const card = document.createElement('div');
         card.className = 'event-primary-card';
         card.innerHTML = `
@@ -494,8 +307,8 @@ let currentRole = 'superadmin';
           <div class="event-meta-item"><i class="fa-solid fa-users"></i> ${ev.totalPeserta} Total Peserta</div>
         </div>
         <div>
-          <span class="subevent-pill-count"><i class="fa-solid fa-sitemap"></i> ${ev.subEvents.length} Sub Event</span>
-          <span class="badge ${ev.status === 'Active' ? 'badge-blue' : ev.status === 'Upcoming' ? 'badge-amber' : 'badge-gray'}" style="margin-left:6px;">${ev.status}</span>
+          <span class="subevent-pill-count"><i class="fa-solid fa-sitemap"></i> ${ev.subEvents.length || 0} Sub Event</span>
+          <span class="badge ${ev.status === 'Active' || ev.status === 'In progress' ? 'badge-blue' : ev.status === 'Upcoming' || ev.status === 'Not started' ? 'badge-amber' : ev.status === 'Cancelled' ? 'badge-red' : 'badge-green'} ms-1">${ev.status}</span>
         </div>
       </div>
       <div class="event-primary-footer">
@@ -564,23 +377,125 @@ let currentRole = 'superadmin';
     }
 
     function editEventPrompt(id) {
-      const ev = eventsData.find(e => e.id === id);
-      if (!ev) return;
-      const newName = prompt('Edit Nama Event Utama:', ev.name);
-      if (newName && newName.trim()) {
-        ev.name = newName.trim();
-        renderEvents();
-        renderDashboardStats();
-        showToast('Event Utama berhasil diperbarui', 'success');
+      const ev = Array.isArray(window.dbEvents)
+        ? window.dbEvents.find(event => String(event.id) === String(id))
+        : null;
+      if (!ev) {
+        showToast('Data event tidak ditemukan.', 'error');
+        return;
       }
+
+      if (ev.status !== 'Not started') {
+        showToast('Edit event hanya dapat dilakukan untuk event yang belum dimulai.', 'error');
+        return;
+      }
+
+      const form = document.getElementById('form-edit-event');
+      form.action = `/admin/event/${encodeURIComponent(id)}/update/handler`;
+      form.dataset.eventId = id;
+      document.getElementById('edit-event-title').value = ev.title || '';
+      document.getElementById('edit-event-start').value = ev.start_date ? ev.start_date.slice(0, 10) : '';
+      document.getElementById('edit-event-end').value = ev.end_date ? ev.end_date.slice(0, 10) : '';
+      document.getElementById('edit-event-location').value = ev.location || '';
+      document.getElementById('edit-event-description').value = ev.description || '';
+      document.getElementById('edit-event-status').value = ev.status;
+
+      openModal('modal-edit-event');
     }
 
     function deleteEvent(id) {
-      if (!confirm('Hapus Event Utama ini beserta seluruh Sub Event di dalamnya?')) return;
-      eventsData = eventsData.filter(e => e.id !== id);
-      renderEvents();
-      renderDashboardStats();
-      showToast('Event Utama telah dihapus', 'info');
+      const event = Array.isArray(window.dbEvents)
+        ? window.dbEvents.find(item => String(item.id) === String(id))
+        : null;
+      if (!event) {
+        showToast('Data event tidak ditemukan.', 'error');
+        return;
+      }
+
+      pendingDeleteEventId = id;
+      document.getElementById('delete-event-title').textContent = event.title || event.name || `#${id}`;
+      openModal('modal-delete-event');
+    }
+
+    function setEventCrudFlash(flash) {
+      sessionStorage.setItem(eventCrudFlashStorageKey, JSON.stringify(flash));
+    }
+
+    function showEventCrudFlash() {
+      const savedFlash = sessionStorage.getItem(eventCrudFlashStorageKey);
+      if (!savedFlash) return false;
+
+      sessionStorage.removeItem(eventCrudFlashStorageKey);
+      const flash = JSON.parse(savedFlash);
+      const event = Array.isArray(window.dbEvents)
+        ? window.dbEvents.find(item => String(item.id) === String(flash.id))
+        : null;
+
+      if (flash.action === 'create') {
+        const previousIds = Array.isArray(flash.previousIds) ? flash.previousIds : [];
+        const createdEvent = Array.isArray(window.dbEvents)
+          ? window.dbEvents.find(item =>
+            item.title === flash.title
+            && !previousIds.includes(String(item.id))
+          )
+          : null;
+        showToast(
+          createdEvent ? 'Event berhasil dibuat.' : 'Penyimpanan event gagal. Periksa kembali data dan koneksi.',
+          createdEvent ? 'success' : 'error'
+        );
+        return true;
+      }
+
+      if (flash.action === 'update') {
+        const updated = event
+          && event.title === flash.title
+          && String(event.start_date || '').slice(0, 10) === flash.start_date
+          && String(event.end_date || '').slice(0, 10) === flash.end_date
+          && (event.location || '') === flash.location
+          && (event.description || '') === flash.description
+          && event.status === flash.status;
+        showToast(
+          updated ? 'Event berhasil diperbarui.' : 'Perubahan event tidak tersimpan.',
+          updated ? 'success' : 'error'
+        );
+        return true;
+      }
+
+      if (flash.action === 'delete') {
+        const deleted = !event;
+        showToast(
+          deleted ? 'Event berhasil dihapus.' : 'Event gagal dihapus.',
+          deleted ? 'success' : 'error'
+        );
+        return true;
+      }
+
+      return false;
+    }
+
+    async function confirmDeleteEvent() {
+      if (pendingDeleteEventId === null) return;
+
+      const confirmButton = document.getElementById('confirm-delete-event');
+      confirmButton.disabled = true;
+
+      try {
+        const response = await fetch(`/admin/event/${encodeURIComponent(pendingDeleteEventId)}/delete`, {
+          method: 'DELETE'
+        });
+        if (!response.ok) {
+          throw new Error(`Permintaan gagal (HTTP ${response.status}).`);
+        }
+
+        closeModal('modal-delete-event');
+        showToast('Event berhasil dihapus.', 'success');
+        pendingDeleteEventId = null;
+        setTimeout(() => window.location.reload(), 2000);
+      } catch (error) {
+        showToast(`Gagal menghapus event: ${error.message}`, 'error');
+      } finally {
+        confirmButton.disabled = false;
+      }
     }
 
     function openEventDetail(eventId) {
@@ -1277,13 +1192,23 @@ let currentRole = 'superadmin';
       if (chartInstances['attendance']) return;
       const ctx = document.getElementById('chart-attendance');
       if (!ctx) return;
+
+      let labels = ['Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep'];
+      let data = [80, 84, 79, 88, 86, 92];
+
+      const db = window.dbDashboard;
+      if (db && db.trend && db.trend.length > 0) {
+        labels = db.trend.map(t => t.month);
+        data = db.trend.map(t => parseFloat(t.attendance_percentage) || 0);
+      }
+
       chartInstances['attendance'] = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: ['Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep'],
+          labels: labels,
           datasets: [{
             label: 'Kehadiran Sub Event (%)',
-            data: [80, 84, 79, 88, 86, 92],
+            data: data,
             borderColor: '#2563eb',
             backgroundColor: 'rgba(37,99,235,.08)',
             borderWidth: 2.5,
@@ -1297,7 +1222,7 @@ let currentRole = 'superadmin';
           responsive: true, maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            y: { min: 60, max: 100, grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } },
+            y: { min: 0, max: 100, grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } },
             x: { grid: { display: false }, ticks: { font: { size: 11 } } }
           }
         }
@@ -1406,8 +1331,41 @@ let currentRole = 'superadmin';
       });
     });
 
+    const editEventForm = document.getElementById('form-edit-event');
+    const editEventFrame = document.getElementById('event-edit-result-frame');
+    if (editEventForm && editEventFrame) {
+      editEventFrame.addEventListener('load', function () {
+        if (editEventForm.dataset.submitted === 'true') {
+          editEventForm.dataset.submitted = 'false';
+          closeModal('modal-edit-event');
+          showToast('Event berhasil diperbarui.', 'success');
+          setTimeout(() => window.location.reload(), 2000);
+        }
+      });
+      editEventForm.addEventListener('submit', function () {
+        editEventForm.dataset.submitted = 'true';
+      });
+    }
+
+    const createEventForm = document.querySelector('#modal-add-event form');
+    const createEventFrame = document.getElementById('event-create-result-frame');
+    if (createEventForm && createEventFrame) {
+      createEventFrame.addEventListener('load', function () {
+        if (createEventForm.dataset.submitted === 'true') {
+          createEventForm.dataset.submitted = 'false';
+          closeModal('modal-add-event');
+          showToast('Event berhasil dibuat.', 'success');
+          setTimeout(() => window.location.reload(), 2000);
+        }
+      });
+      createEventForm.addEventListener('submit', function () {
+        createEventForm.dataset.submitted = 'true';
+      });
+    }
+
     function showToast(msg, type = 'info') {
       const c = document.getElementById('toast-container');
+      if (!c) return;
       const icon = { success: 'fa-circle-check', error: 'fa-circle-xmark', info: 'fa-circle-info' }[type] || 'fa-circle-info';
       const div = document.createElement('div');
       div.className = `toast toast-${type}`;
@@ -1418,7 +1376,7 @@ let currentRole = 'superadmin';
         div.style.opacity = '0';
         div.style.transform = 'translateX(20px)';
         setTimeout(() => div.remove(), 300);
-      }, 3200);
+      }, 2300);
     }
 
 if (typeof window !== 'undefined' && window.currentUser) {
@@ -1436,6 +1394,12 @@ if (typeof window !== 'undefined' && window.currentUser) {
         applyRoleUI(roleKey);
         buildSidebar(roleKey);
         setUserInfo(roleKey);
-        navTo(defaultPage[roleKey]);
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialPage = urlParams.get('page_view') || defaultPage[roleKey];
+        navTo(initialPage);
+        const hasEventCrudFlash = showEventCrudFlash();
+        if (!hasEventCrudFlash && urlParams.get('created_id')) {
+          showToast('Event Utama berhasil dibuat!', 'success');
+        }
       });
     }
