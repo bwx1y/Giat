@@ -37,7 +37,7 @@ function is_logged_in(): bool
 function require_login(): void
 {
     if (!is_logged_in()) {
-        header("Location: /login?error=Login is required");
+        header("Location: /?error=Login is required");
         exit;
     }
 }
