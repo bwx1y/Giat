@@ -2,41 +2,10 @@
 $eventSearch = $_GET['search'] ?? '';
 $eventStatus = $_GET['status'] ?? '';
 
-$eventFilters = [];
-if (!empty($eventSearch)) {
-    $eventFilters[] = [
-        'key' => 'search',
-        'query' => 'title ILIKE :search',
-        'value' => "%$eventSearch%",
-    ];
-}
-if (!empty($eventStatus)) {
-    $eventFilters[] = [
-        'key' => 'status',
-        'query' => 'status = :status',
-        'value' => $eventStatus,
-    ];
-}
-
-$eventsDataList = [];
-try {
-    $eventStmt = queryBuilder(
-        table: 'vw_event',
-      filters: $eventFilters,
-        size: 50,
-        page: 1,
-    );
-    if ($eventStmt) {
-        $eventsDataList = $eventStmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // echo '<pre>';
-        // var_dump($eventsDataList);
-        // echo '</pre>';
-        // exit;
-    }
-} catch (\Throwable $e) {
-    $eventsDataList = [];
-}
+$_GET['page'] = $_GET['page'] ?? 1;
+$_GET['size'] = $_GET['size'] ?? 50;
+require __DIR__ . '/../../admin/event/index.php';
+$eventsDataList = $result;
 ?>
 <div id="page-event" class="page">
   <div class="card">
@@ -50,8 +19,7 @@ try {
         <i class="fa-solid fa-plus"></i> Buat Event
       </button>
     </div>
-    <form method="GET" action="" class="toolbar">
-      <input type="hidden" name="page_view" value="event" />
+    <form method="GET" action="/event" class="toolbar">
       <div class="search-wrap search-wrap-sm">
         <i class="fa-solid fa-magnifying-glass"></i>
         <input type="text" name="search" id="search-event" placeholder="Cari Event Utama…" value="<?= htmlspecialchars($eventSearch) ?>" />
@@ -64,7 +32,7 @@ try {
       </select>
       <button type="submit" class="btn btn-blue btn-sm">Cari</button>
       <?php if (!empty($eventSearch) || !empty($eventStatus)): ?>
-        <a href="/?page_view=event" class="btn btn-outline btn-sm">Reset</a>
+        <a href="/event" class="btn btn-outline btn-sm">Reset</a>
       <?php endif; ?>
     </form>
     <div class="event-primary-grid" id="event-grid">
