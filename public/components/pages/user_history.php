@@ -1,3 +1,12 @@
+<?php
+$userHistoryData = [];
+if (has_role('Member')) {
+    require __DIR__ . '/../../member/history/index.php';
+    if ($result) {
+        $userHistoryData[] = $result;
+    }
+}
+?>
 <div id="page-user-history" class="page">
         <div class="card">
           <div class="card-header">
@@ -26,3 +35,6 @@
           </div>
         </div>
       </div>
+<script>
+  window.dbUserHistory = <?= json_encode($userHistoryData) ?>;
+</script>
