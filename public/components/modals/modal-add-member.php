@@ -4,35 +4,34 @@
       <h3>Tambah Anggota Baru</h3>
       <button class="modal-close" onclick="closeModal('modal-add-member')">&times;</button>
     </div>
-    <div class="modal-body">
-      <div class="field-group">
-        <label>Nama Lengkap</label>
-        <input id="new-name" type="text" placeholder="Nama anggota" />
-      </div>
-      <div class="field-row">
+    <form method="POST" action="/admin/users/create_handler" target="member-create-result-frame">
+      <?= csrf_field() ?>
+      <div class="modal-body">
         <div class="field-group">
-          <label>Email</label>
-          <input id="new-email" type="email" placeholder="email@org.id" />
+          <label>Nama Lengkap</label>
+          <input type="text" name="full_name" id="new-member-name" placeholder="Nama anggota" required />
         </div>
         <div class="field-group">
-          <label>NIM / ID Anggota</label>
-          <input id="new-id" type="text" placeholder="A009" />
+          <label>Username</label>
+          <input type="text" name="username" id="new-member-username" placeholder="Username untuk login" required />
+        </div>
+        <div class="field-group">
+          <label>Password</label>
+          <input type="password" name="password" id="new-member-password" placeholder="Minimal 6 karakter" required />
+        </div>
+        <div class="field-group">
+          <label>Role</label>
+          <select name="role" id="new-member-role">
+            <option value="Member">Member</option>
+            <option value="Admin">Admin</option>
+          </select>
         </div>
       </div>
-      <div class="field-group">
-        <label>Divisi</label>
-        <select id="new-div">
-          <option>Divisi Teknologi</option>
-          <option>Divisi Kreatif</option>
-          <option>Divisi Humas</option>
-          <option>Divisi Keuangan</option>
-          <option>Divisi Akademik</option>
-        </select>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-member')">Batal</button>
+        <button type="submit" class="btn btn-blue"><i class="fa-solid fa-plus"></i> Tambah Anggota</button>
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-add-member')">Batal</button>
-      <button class="btn btn-blue" onclick="addMember()"><i class="fa-solid fa-plus"></i> Tambah Anggota</button>
-    </div>
+    </form>
   </div>
 </div>
+<iframe name="member-create-result-frame" id="member-create-result-frame" title="Hasil tambah anggota" hidden></iframe>
