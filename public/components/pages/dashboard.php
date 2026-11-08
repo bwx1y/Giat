@@ -152,8 +152,7 @@ $dashboardData = [
                 <i class="fa-solid fa-plus"></i> Buat Event Utama
               </button>
             </div>
-            <form method="GET" action="" class="toolbar">
-              <input type="hidden" name="page_view" value="dashboard" />
+            <form method="GET" action="/dashboard" class="toolbar">
               <div class="search-wrap search-wrap-sm">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" name="dash_search" id="search-dashboard" placeholder="Cari Event Utama…" value="<?= htmlspecialchars($dashSearch) ?>" />
@@ -166,7 +165,7 @@ $dashboardData = [
               </select>
               <button type="submit" class="btn btn-blue btn-sm">Cari</button>
               <?php if (!empty($dashSearch) || !empty($dashStatus)): ?>
-                <a href="/?page_view=dashboard" class="btn btn-outline btn-sm">Reset</a>
+                <a href="/dashboard" class="btn btn-outline btn-sm">Reset</a>
               <?php endif; ?>
             </form>
             <div class="table-wrap">
