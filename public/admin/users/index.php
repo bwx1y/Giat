@@ -1,7 +1,5 @@
 <?php
-
-require_once __DIR__ . '/../../config/session.php';
-
+global $applicationDb;
 require_login();
 
 $currentUser = current_user();
@@ -9,8 +7,8 @@ if (($currentUser['role']?? '') !== 'Admin') {
     die("Akses ditolak: Halaman ini hanya dapat diakses oleh Admin.");
 }
 
-$search = trim($_GET['search'] ?? $_GET['q'] ?? '');
-$role   = trim($_GET['role'] ?? '');
+$search = trim($_GET['m_search'] ?? $_GET['search'] ?? $_GET['q'] ?? '');
+$role   = trim($_GET['m_role'] ?? $_GET['role'] ?? '');
 
 $sql = "SELECT id, username, full_name, role, active, created_at FROM users WHERE deleted_at IS NULL";
 $params = [];

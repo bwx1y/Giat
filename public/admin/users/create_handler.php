@@ -1,8 +1,5 @@
 <?php
-
-require_once __DIR__ . '/../../config/session.php';
-require_once __DIR__ . '/../../config/validation.php';
-
+global $applicationDb;
 require_login();
 
 $currentUser = current_user();
