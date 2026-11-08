@@ -114,8 +114,47 @@ function resolveRoute(string $baseDir, string $uri): ?array {
 }
 }
 
-// 4. Resolver & Access Logger
-$resolved = resolveRoute(__DIR__ . '/public', $uri);
+// 4. Resolve UI page routes and API/file routes
+$routePath = '/' . trim($uri, '/');
+$uiPage = null;
+$uiParams = [];
+$uiRoutes = [
+    '/dashboard' => 'dashboard',
+    '/users' => 'anggota',
+    '/anggota' => 'anggota',
+    '/event' => 'event',
+    '/absensi' => 'absensi',
+    '/statistik' => 'statistik',
+    '/riwayat' => 'user-history',
+];
+
+if (isset($uiRoutes[$routePath])) {
+    $uiPage = $uiRoutes[$routePath];
+} elseif (preg_match('#^/event/([0-9]+)/subevent/([0-9]+)$#', $routePath, $matches)) {
+    $uiPage = 'subevent-detail';
+    $uiParams = [
+        'event_id' => $matches[1],
+        'subevent_id' => $matches[2],
+    ];
+} elseif (preg_match('#^/event/([0-9]+)$#', $routePath, $matches)) {
+    $uiPage = 'event-detail';
+    $uiParams = ['event_id' => $matches[1]];
+}
+
+if ($uiPage !== null) {
+    $_GET['page_view'] = $uiPage;
+    foreach ($uiParams as $key => $value) {
+        $_GET[$key] = $value;
+    }
+    $resolved = [
+        'file' => __DIR__ . '/public/index.php',
+        'params' => $uiParams,
+    ];
+} else {
+    $resolved = resolveRoute(__DIR__ . '/public', $uri);
+}
+
+// Access Logger
 $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $target = $resolved !== null ? str_replace(__DIR__ . '/', '', $resolved['file']) : '404';

@@ -3,6 +3,7 @@ let currentRole = 'superadmin';
     let currentActiveEventId = 1;
     let currentActiveSubEventId = 101;
     let pendingDeleteEventId = null;
+    let pendingDeleteMemberId = null;
     const eventCrudFlashStorageKey = 'eventCrudFlash';
     let qrTimerInterval = null;
     let chartInstances = {};
@@ -127,13 +128,68 @@ let currentRole = 'superadmin';
       document.getElementById('sidebar-overlay').style.display = 'none';
     }
 
-    function navTo(pageId) {
+    function pageRoute(pageId) {
+      if (pageId === 'dashboard' || pageId === 'admin-dashboard' || pageId === 'user-dashboard') {
+        return '/dashboard';
+      }
+      if (pageId === 'event-detail') {
+        return `/event/${encodeURIComponent(currentActiveEventId)}`;
+      }
+      if (pageId === 'subevent-detail') {
+        return `/event/${encodeURIComponent(currentActiveEventId)}/subevent/${encodeURIComponent(currentActiveSubEventId)}`;
+      }
+
+      const routes = {
+        anggota: '/users',
+        event: '/event',
+        absensi: '/absensi',
+        statistik: '/statistik',
+        'user-history': '/riwayat',
+      };
+      return routes[pageId] || '/dashboard';
+    }
+
+    function pageFromLocation() {
+      const path = window.location.pathname.replace(/\/+$/, '') || '/';
+      const subEventMatch = path.match(/^\/event\/(\d+)\/subevent\/(\d+)$/);
+      if (subEventMatch) {
+        currentActiveEventId = Number(subEventMatch[1]);
+        currentActiveSubEventId = Number(subEventMatch[2]);
+        return 'subevent-detail';
+      }
+
+      const eventMatch = path.match(/^\/event\/(\d+)$/);
+      if (eventMatch) {
+        currentActiveEventId = Number(eventMatch[1]);
+        return 'event-detail';
+      }
+
+      if (path === '/dashboard') return defaultPage[currentRole];
+      const routePages = {
+        '/users': 'anggota',
+        '/anggota': 'anggota',
+        '/event': 'event',
+        '/absensi': 'absensi',
+        '/statistik': 'statistik',
+        '/riwayat': 'user-history',
+      };
+      return routePages[path] || new URLSearchParams(window.location.search).get('page_view') || defaultPage[currentRole];
+    }
+
+    function navTo(pageId, historyMode = 'push') {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
 
       const target = document.getElementById('page-' + pageId);
       if (!target) return;
       target.classList.add('active');
       currentPage = pageId;
+
+      const route = pageRoute(pageId);
+      if (historyMode === 'replace') {
+        window.history.replaceState({ pageId }, '', route);
+      } else if (historyMode === 'push' && window.location.pathname !== route) {
+        window.history.pushState({ pageId }, '', route);
+      }
 
       document.getElementById('topbar-title').textContent = pageTitles[pageId] || 'GIAT';
 
@@ -146,7 +202,7 @@ let currentRole = 'superadmin';
         initDashboardChart();
       }
       if (pageId === 'anggota') {
-        renderMembers(members);
+        renderMembers();
       }
       if (pageId === 'event') {
         renderEvents();
@@ -1053,17 +1109,22 @@ let currentRole = 'superadmin';
       const tbody = document.getElementById('user-history-tbody');
       tbody.innerHTML = '';
 
-      const userItems = attendanceHistory.filter(a => a.member === 'Andi Pratama');
+      const userItems = Array.isArray(window.dbUserHistory) ? window.dbUserHistory : [];
+      if (userItems.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--slate-400);">Belum ada riwayat kehadiran.</td></tr>';
+        return;
+      }
+
       userItems.forEach(item => {
-        const isHadir = item.status === 'Hadir';
+        const isHadir = item.status === 'Present';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-      <td><strong>${item.event}</strong></td>
-      <td><span class="subevent-tree-badge"><i class="fa-solid fa-sitemap"></i> ${item.subEvent}</span></td>
+      <td><strong>${item.main_event}</strong></td>
+      <td><span class="subevent-tree-badge"><i class="fa-solid fa-sitemap"></i> ${item.sub_event}</span></td>
       <td>${item.date}</td>
-      <td><span class="badge ${isHadir ? 'badge-green' : 'badge-red'}">${item.status}</span></td>
+      <td><span class="badge ${isHadir ? 'badge-green' : 'badge-red'}">${isHadir ? 'Hadir' : 'Tidak Hadir'}</span></td>
       <td>${item.method !== '—' ? `<span class="badge badge-blue">${item.method}</span>` : '—'}</td>
-      <td><strong class="${isHadir ? 'point-positive' : 'point-negative'}">${isHadir ? '+3' : '-1'}</strong></td>
+      <td><strong class="${isHadir ? 'point-positive' : 'point-negative'}">${item.point}</strong></td>
     `;
         tbody.appendChild(tr);
       });
@@ -1073,9 +1134,37 @@ let currentRole = 'superadmin';
       const tbody = document.getElementById('absensi-all-tbody');
       tbody.innerHTML = '';
 
-      attendanceHistory.forEach((item, idx) => {
+      const attendanceRows = Array.isArray(window.dbAttendance)
+        ? window.dbAttendance.map(item => {
+          const isHadir = Number(item.status) === 1;
+          const date = String(item.date || '').split(' ')[0];
+          return {
+            id: item.meeting_id,
+            member: item.member_name || '',
+            event: item.event || '',
+            eventId: String(item.event_id || ''),
+            subEvent: item.sub_event || '',
+            date: date.includes('-') ? formatDateId(date) : date,
+            status: isHadir ? 'Hadir' : 'Tidak Hadir',
+            method: item.method || '—',
+            point: isHadir ? 3 : -1,
+          };
+        })
+        : attendanceHistory;
+
+      if (attendanceRows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--slate-400);">Tidak ada data absensi.</td></tr>';
+        return;
+      }
+
+      attendanceRows.forEach((item, idx) => {
         const isHadir = item.status === 'Hadir';
         const tr = document.createElement('tr');
+        tr.dataset.member = item.member.toLowerCase();
+        tr.dataset.event = item.event.toLowerCase();
+        tr.dataset.eventId = item.eventId || '';
+        tr.dataset.subevent = item.subEvent.toLowerCase();
+        tr.dataset.status = item.status;
         tr.innerHTML = `
       <td><strong>${item.member}</strong></td>
       <td>${item.event}</td>
@@ -1085,9 +1174,9 @@ let currentRole = 'superadmin';
       <td>${item.method !== '—' ? `<span class="badge badge-blue">${item.method}</span>` : '—'}</td>
       <td><strong class="${isHadir ? 'point-positive' : 'point-negative'}">${isHadir ? '+3' : '-1'}</strong></td>
       <td>
-        <button class="action-link" onclick="koreksiGlobalAbsensi(${idx})">
-          Koreksi
-        </button>
+        ${Array.isArray(window.dbAttendance)
+          ? '—'
+          : `<button class="action-link" onclick="koreksiGlobalAbsensi(${idx})">Koreksi</button>`}
       </td>
     `;
         tbody.appendChild(tr);
@@ -1100,13 +1189,15 @@ let currentRole = 'superadmin';
       const stFilter = document.getElementById('absensi-filter-status').value;
 
       const rows = document.querySelectorAll('#absensi-all-tbody tr');
-      attendanceHistory.forEach((item, idx) => {
-        const matchQ = item.member.toLowerCase().includes(q) || item.event.toLowerCase().includes(q) || item.subEvent.toLowerCase().includes(q);
-        const matchEv = !evFilter || item.event === evFilter;
-        const matchSt = !stFilter || item.status === stFilter;
-        if (rows[idx]) {
-          rows[idx].style.display = (matchQ && matchEv && matchSt) ? '' : 'none';
-        }
+      rows.forEach(row => {
+        const matchQ = row.dataset.member.includes(q)
+          || row.dataset.event.includes(q)
+          || row.dataset.subevent.includes(q);
+        const matchEv = !evFilter || (Array.isArray(window.dbAttendance)
+          ? row.dataset.eventId === evFilter
+          : row.dataset.event === evFilter.toLowerCase());
+        const matchSt = !stFilter || row.dataset.status === stFilter;
+        row.style.display = matchQ && matchEv && matchSt ? '' : 'none';
       });
     }
 
@@ -1127,23 +1218,36 @@ let currentRole = 'superadmin';
       renderAbsensiList();
     }
 
-    function renderMembers(list) {
+    function renderMembers() {
       const tbody = document.getElementById('member-tbody');
       tbody.innerHTML = '';
-      list.forEach((m, i) => {
+
+      let list = members;
+      if (Array.isArray(window.dbMembers)) {
+        list = window.dbMembers;
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--slate-400);">Tidak ada anggota yang ditemukan.</td></tr>';
+        return;
+      }
+
+      list.forEach((m) => {
         const row = document.createElement('tr');
+        const isActive = m.active === true || m.active === 't' || m.active === 1 || m.active === 'true' || m.status === 'Aktif';
         row.innerHTML = `
       <td>${m.id}</td>
-      <td><strong>${m.name}</strong></td>
-      <td>${m.div}</td>
-      <td>${m.hadir} sesi</td>
-      <td>${m.absen} sesi</td>
-      <td><strong style="color:var(--blue-600);font-size:14px;">${m.point} pt</strong></td>
-      <td><span class="badge ${m.status === 'Aktif' ? 'badge-green' : 'badge-gray'}">${m.status}</span></td>
+      <td><strong>${m.full_name || m.name}</strong></td>
+      <td>${m.username || m.id}</td>
+      <td><span class="badge ${m.role === 'Admin' ? 'badge-blue' : 'badge-gray'}">${m.role || 'Member'}</span></td>
+      <td>${m.hadir || 0} sesi</td>
+      <td>${m.absen || 0} sesi</td>
+      <td><strong style="color:var(--blue-600);font-size:14px;">${m.point || 0} pt</strong></td>
+      <td><span class="badge ${isActive ? 'badge-green' : 'badge-gray'}">${isActive ? 'Aktif' : 'Non-Aktif'}</span></td>
       <td>
         <div class="actions-cell">
-          <button class="action-link" onclick="showToast('Edit anggota: ${m.name}','info')">Edit</button>
-          <button class="action-link danger" onclick="deleteMemberRow(${i})">Hapus</button>
+          <button class="action-link" onclick="editMemberPrompt(${m.id})">Edit</button>
+          <button class="action-link danger" onclick="deleteMemberRow(${m.id})">Hapus</button>
         </div>
       </td>
     `;
@@ -1151,36 +1255,93 @@ let currentRole = 'superadmin';
       });
     }
 
-    function filterMembers() {
-      const q = document.getElementById('member-search').value.toLowerCase();
-      const div = document.getElementById('member-filter-div').value;
-      const filtered = members.filter(m =>
-        (m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q)) &&
-        (div === '' || m.div === div)
-      );
-      renderMembers(filtered);
+    function editMemberPrompt(id) {
+      const list = Array.isArray(window.dbMembers) ? window.dbMembers : members;
+      const m = list.find(item => String(item.id) === String(id));
+      if (!m) {
+        showToast('Data anggota tidak ditemukan.', 'error');
+        return;
+      }
+      document.getElementById('edit-member-id').value = m.id;
+      document.getElementById('edit-member-name').value = m.full_name || m.name || '';
+      document.getElementById('edit-member-username').value = m.username || m.id || '';
+      document.getElementById('edit-member-role').value = m.role || 'Member';
+      document.getElementById('edit-member-password').value = '';
+      openModal('modal-edit-member');
     }
 
-    function addMember() {
-      const name = document.getElementById('new-name').value.trim();
-      if (!name) { showToast('Nama anggota tidak boleh kosong', 'error'); return; }
-      const div = document.getElementById('new-div').value;
-      const id = 'A' + String(members.length + 1).padStart(3, '0');
+    function deleteMemberRow(id) {
+      const list = Array.isArray(window.dbMembers) ? window.dbMembers : members;
+      const member = list.find(item => String(item.id) === String(id));
+      if (!member) {
+        showToast('Data anggota tidak ditemukan.', 'error');
+        return;
+      }
 
-      members.push({ id, name, div, hadir: 0, absen: 0, point: 0, status: 'Aktif' });
-      renderMembers(members);
-      closeModal('modal-add-member');
-      document.getElementById('new-name').value = '';
-      document.getElementById('new-email').value = '';
-      document.getElementById('new-id').value = '';
-      showToast('Anggota ' + name + ' berhasil ditambahkan!', 'success');
+      pendingDeleteMemberId = id;
+      document.getElementById('delete-member-name').textContent = member.full_name || member.name || `#${id}`;
+      openModal('modal-delete-member');
     }
 
-    function deleteMemberRow(idx) {
-      if (!confirm('Hapus anggota ini dari daftar?')) return;
-      members.splice(idx, 1);
-      renderMembers(members);
-      showToast('Anggota berhasil dihapus', 'info');
+    async function confirmDeleteMember() {
+      if (pendingDeleteMemberId === null) return;
+
+      const confirmButton = document.getElementById('confirm-delete-member');
+      confirmButton.disabled = true;
+      try {
+        const formData = new FormData();
+        formData.append('id', pendingDeleteMemberId);
+        const response = await fetch('/admin/users/delete_handler', {
+          method: 'POST',
+          body: formData
+        });
+        if (!response.ok) {
+          throw new Error(`Permintaan gagal (HTTP ${response.status}).`);
+        }
+        const resultUrl = new URL(response.url);
+        if (!resultUrl.searchParams.has('success')) {
+          throw new Error('Server tidak mengonfirmasi penghapusan anggota.');
+        }
+
+        closeModal('modal-delete-member');
+        pendingDeleteMemberId = null;
+        showToast('Anggota berhasil dihapus.', 'success');
+        setTimeout(() => window.location.reload(), 2000);
+      } catch (error) {
+        showToast('Gagal menghapus anggota: ' + error.message, 'error');
+      } finally {
+        confirmButton.disabled = false;
+      }
+    }
+
+    async function submitMemberForm(form, modalId) {
+      const submitButton = form.querySelector('button[type="submit"]');
+      submitButton.disabled = true;
+
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          credentials: 'same-origin'
+        });
+        if (!response.ok) {
+          throw new Error(`Permintaan gagal (HTTP ${response.status}).`);
+        }
+
+        const resultUrl = new URL(response.url);
+        const successMessage = resultUrl.searchParams.get('success');
+        if (!successMessage) {
+          throw new Error('Data tidak tersimpan. Periksa kembali isian dan coba lagi.');
+        }
+
+        closeModal(modalId);
+        showToast(successMessage, 'success');
+        setTimeout(() => window.location.reload(), 1200);
+      } catch (error) {
+        showToast(`Gagal menyimpan anggota: ${error.message}`, 'error');
+      } finally {
+        submitButton.disabled = false;
+      }
     }
 
     function destroyCharts() {
@@ -1363,6 +1524,22 @@ let currentRole = 'superadmin';
       });
     }
 
+    const createMemberForm = document.querySelector('#modal-add-member form');
+    if (createMemberForm) {
+      createMemberForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        submitMemberForm(createMemberForm, 'modal-add-member');
+      });
+    }
+
+    const editMemberForm = document.querySelector('#modal-edit-member form');
+    if (editMemberForm) {
+      editMemberForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        submitMemberForm(editMemberForm, 'modal-edit-member');
+      });
+    }
+
     function showToast(msg, type = 'info') {
       const c = document.getElementById('toast-container');
       if (!c) return;
@@ -1395,11 +1572,21 @@ if (typeof window !== 'undefined' && window.currentUser) {
         buildSidebar(roleKey);
         setUserInfo(roleKey);
         const urlParams = new URLSearchParams(window.location.search);
-        const initialPage = urlParams.get('page_view') || defaultPage[roleKey];
-        navTo(initialPage);
+        const initialPage = pageFromLocation();
+        if (initialPage === 'event-detail' && window.routeParams && window.routeParams.event_id) {
+          currentActiveEventId = Number(window.routeParams.event_id);
+        }
+        if (initialPage === 'subevent-detail' && window.routeParams && window.routeParams.subevent_id) {
+          currentActiveSubEventId = Number(window.routeParams.subevent_id);
+        }
+        navTo(initialPage, 'replace');
         const hasEventCrudFlash = showEventCrudFlash();
         if (!hasEventCrudFlash && urlParams.get('created_id')) {
           showToast('Event Utama berhasil dibuat!', 'success');
         }
       });
     }
+
+    window.addEventListener('popstate', function () {
+      navTo(pageFromLocation(), 'none');
+    });
