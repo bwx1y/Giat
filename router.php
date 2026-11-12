@@ -124,18 +124,18 @@ write_log("$ip $method $uri -> $target", 'INFO');
 // 5. Role & Auth Guard
 $cleanPath = '/' . trim($uri, '/');
 
-if ($cleanPath === '/login' && is_logged_in()) {
-    header("Location: " . (has_role('Admin') ? '/admin/event' : '/'));
-    exit;
-}
-
-if ($cleanPath === '/admin' || str_starts_with($cleanPath, '/admin/')) {
-    require_role('Admin');
-}
-
-if ($cleanPath === '/member' || str_starts_with($cleanPath, '/member/')) {
-    require_role('Member');
-}
+//if ($cleanPath === '/login' && is_logged_in()) {
+//    header("Location: " . (has_role('Admin') ? '/admin/event' : '/'));
+//    exit;
+//}
+//
+//if ($cleanPath === '/admin' || str_starts_with($cleanPath, '/admin/')) {
+//    require_role('Admin');
+//}
+//
+//if ($cleanPath === '/member' || str_starts_with($cleanPath, '/member/')) {
+//    require_role('Member');
+//}
 
 if ($resolved !== null) {
     foreach ($resolved['params'] as $key => $value) {
