@@ -555,8 +555,26 @@ let currentRole = 'superadmin';
     }
 
     function openEventDetail(eventId) {
-      currentActiveEventId = eventId;
-      navTo('event-detail');
+      window.location.assign(`/event/${encodeURIComponent(eventId)}`);
+    }
+
+    async function deleteEventMember(eventId, userId) {
+      if (!window.confirm('Hapus anggota ini dari event?')) return;
+
+      try {
+        const response = await fetch(`/event/${encodeURIComponent(eventId)}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body: new URLSearchParams({ member_id: String(userId) }),
+        });
+        if (!response.ok) {
+          throw new Error(`Permintaan gagal (HTTP ${response.status}).`);
+        }
+
+        window.location.reload();
+      } catch (error) {
+        showToast(`Gagal menghapus anggota: ${error.message}`, 'error');
+      }
     }
 
     function renderEventDetail(eventId) {
@@ -1559,11 +1577,11 @@ let currentRole = 'superadmin';
 if (typeof window !== 'undefined' && window.currentUser) {
       document.addEventListener('DOMContentLoaded', function () {
         const r = (window.currentUser.role || 'Member').toLowerCase();
-        const roleKey = (r === 'admin') ? 'superadmin' : 'member';
+        const roleKey = (r === 'admin') ? 'superadmin' : (window.isEventAdmin ? 'admin' : 'member');
         currentRole = roleKey;
         if (userInfo[roleKey]) {
           userInfo[roleKey].name = window.currentUser.full_name || window.currentUser.username;
-          userInfo[roleKey].role = window.currentUser.role;
+          userInfo[roleKey].role = (roleKey === 'admin') ? 'Admin / PIC' : window.currentUser.role;
           const initials = (window.currentUser.full_name || window.currentUser.username || 'US')
             .split(' ').filter(Boolean).map(w => w[0]).join('').substring(0, 2).toUpperCase();
           userInfo[roleKey].initials = initials;
