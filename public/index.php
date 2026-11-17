@@ -67,6 +67,31 @@ if ($memberEventRouteId && $_SERVER['REQUEST_METHOD'] === 'DELETE') {
     exit;
 }
 
+$pageView = $_GET['page_view'] ?? 'dashboard';
+
+$pageComponentMap = [
+    'dashboard'       => ['dashboard.php'],
+    'anggota'         => ['anggota.php'],
+    'event'           => ['event.php'],
+    'event-detail'    => ['event_detail.php'],
+    'subevent-detail' => ['subevent_detail.php'],
+    'admin-dashboard' => ['admin_dashboard.php'],
+    'absensi'         => ['absensi.php'],
+    'statistik'       => ['statistik.php'],
+    'user-dashboard'  => ['user_dashboard.php'],
+    'user-history'    => ['user_history.php'],
+];
+
+$roleBasedPages = [
+    'dashboard' => ['dashboard.php', 'admin_dashboard.php', 'user_dashboard.php'],
+];
+
+$pagesToLoad = $roleBasedPages[$pageView]
+    ?? $pageComponentMap[$pageView]
+    ?? [$pageView . '.php'];
+
+$pagesDir = __DIR__ . '/components/pages/';
+
 require_once __DIR__ . '/components/header.php';
 
 if (!$isLoggedIn):
@@ -80,16 +105,12 @@ else:
     <?php require_once __DIR__ . '/components/topbar.php'; ?>
     <main id="main-content" class="flex-fill w-100 min-w-0">
       <?php
-      require_once __DIR__ . '/components/pages/dashboard.php';
-      require_once __DIR__ . '/components/pages/anggota.php';
-      require_once __DIR__ . '/components/pages/event.php';
-      require_once __DIR__ . '/components/pages/event_detail.php';
-      require_once __DIR__ . '/components/pages/subevent_detail.php';
-      require_once __DIR__ . '/components/pages/admin_dashboard.php';
-      require_once __DIR__ . '/components/pages/absensi.php';
-      require_once __DIR__ . '/components/pages/statistik.php';
-      require_once __DIR__ . '/components/pages/user_dashboard.php';
-      require_once __DIR__ . '/components/pages/user_history.php';
+      foreach ($pagesToLoad as $pageFile) {
+          $fullPath = $pagesDir . $pageFile;
+          if (is_file($fullPath)) {
+              require_once $fullPath;
+          }
+      }
       ?>
     </main>
   </div>
