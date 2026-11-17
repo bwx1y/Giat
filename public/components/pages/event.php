@@ -73,7 +73,7 @@ $eventsDataList = $result;
             <textarea name="description" id="edit-event-description" rows="3"></textarea>
           </div>
           <div class="field-group">
-            <label for="edit-event-status">Status Event</label>
+            <label>Status Event</label>
             <select name="status" id="edit-event-status">
               <option value="Not started">Not started</option>
             </select>

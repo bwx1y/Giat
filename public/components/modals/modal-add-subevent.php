@@ -5,12 +5,7 @@
       <button class="modal-close" onclick="closeModal('modal-add-subevent')">&times;</button>
     </div>
     <div class="modal-body">
-      <div class="field-group">
-        <label>Event Utama (Parent Event)</label>
-        <select id="new-sub-parent-select" class="select-disabled" disabled>
-
-        </select>
-      </div>
+      <input type="hidden" id="new-sub-parent-select" />
       <div class="field-group">
         <label>Nama Sub Event</label>
         <input type="text" id="new-sub-name" placeholder="Contoh: Rapat Persiapan 1, Technical Meeting, dll" />
@@ -23,9 +18,9 @@
         <div class="field-group">
           <label>Status</label>
           <select id="new-sub-status">
-            <option value="Upcoming">Upcoming</option>
-            <option value="Active">Active</option>
-            <option value="Finished">Finished</option>
+            <option value="Not started">Not started</option>
+            <option value="in progress">in progress</option>
+            <option value="done">done</option>
           </select>
         </div>
       </div>
@@ -42,16 +37,6 @@
       <div class="field-group">
         <label>Lokasi / Ruangan</label>
         <input type="text" id="new-sub-loc" placeholder="Ruang Meeting A / Zoom Link" />
-      </div>
-      <div class="field-group">
-        <label>PIC / Admin Penanggung Jawab</label>
-        <select id="new-sub-pic">
-          <option value="Budi Santoso">Budi Santoso (Admin / PIC)</option>
-          <option value="Andi Pratama">Andi Pratama</option>
-          <option value="Rizky Ramadhan">Rizky Ramadhan</option>
-          <option value="Rina Wijaya">Rina Wijaya</option>
-          <option value="Hendra Kurnia">Hendra Kurnia</option>
-        </select>
       </div>
       <div class="field-group">
         <label>Deskripsi Sub Event</label>

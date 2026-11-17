@@ -35,7 +35,12 @@
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input type="password" name="password" id="login-password" placeholder="••••••••" required />
+        <div class="password-input-wrap">
+          <input type="password" name="password" id="login-password" placeholder="••••••••" required />
+          <button type="button" class="btn-toggle-password" id="btn-toggle-password" onclick="togglePasswordVisibility()" title="Tampilkan / sembunyikan password" aria-label="Tampilkan atau sembunyikan password">
+            <i class="fa-regular fa-eye" id="toggle-password-icon"></i>
+          </button>
+        </div>
       </div>
       <button type="submit" class="btn-primary login-submit-btn">
         <i class="fa-solid fa-arrow-right-to-bracket"></i>&nbsp; Masuk ke Sistem
@@ -44,3 +49,24 @@
 
   </div>
 </div>
+<script>
+  function togglePasswordVisibility() {
+    const pwdInput = document.getElementById('login-password');
+    const icon = document.getElementById('toggle-password-icon');
+    if (!pwdInput) return;
+
+    if (pwdInput.type === 'password') {
+      pwdInput.type = 'text';
+      if (icon) {
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+      }
+    } else {
+      pwdInput.type = 'password';
+      if (icon) {
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+      }
+    }
+  }
+</script>

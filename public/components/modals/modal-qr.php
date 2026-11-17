@@ -14,18 +14,15 @@
           </div>
           <div class="qr-status-row">
             <span class="live-dot"></span>
-            <span class="qr-status-text">Absensi Aktif</span>
+            <span class="qr-status-text" id="qr-stream-status">Menghubungkan ke server QR...</span>
           </div>
           <div class="qr-timer-box qr-timer-margin">
-            Expired: <span id="qr-expire-time">21:00</span> &nbsp;|&nbsp; Sisa Waktu: <span id="qr-countdown">29:50</span>
+            QR hanya dapat digunakan sekali dan akan diperbarui setelah presensi berhasil.
           </div>
         </div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-danger" onclick="closeSessionFromModal()">
-        <i class="fa-solid fa-lock"></i> Tutup Sesi Absensi
-      </button>
       <button class="btn btn-outline" onclick="closeModal('modal-qr')">Selesai</button>
     </div>
   </div>

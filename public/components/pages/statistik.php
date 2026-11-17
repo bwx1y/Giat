@@ -1,3 +1,15 @@
+<?php
+require __DIR__ . '/../../admin/statistik/index.php';
+?>
+<script>
+  window.dbStatistik = {
+    monthlyTrend: <?= json_encode($monthlyTrendResult) ?>,
+    topMembers:   <?= json_encode($topMemberResult) ?>,
+    eventRate:    <?= json_encode($eventRateResult) ?>,
+    divisionDist: <?= json_encode($divisionDistResult) ?>,
+  };
+</script>
+
 <div id="page-statistik" class="page">
   <div class="dashboard-grid mb-20">
     <div class="card">
