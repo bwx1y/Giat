@@ -33,14 +33,6 @@
           <label>Deskripsi Event</label>
           <textarea name="description" id="new-event-desc" rows="3" placeholder="Keterangan singkat tentang event utama…"></textarea>
         </div>
-        <div class="field-group">
-          <label>Status Event</label>
-          <select name="status" id="new-event-status">
-            <option value="Not started">Not started</option>
-            <option value="in progress">in progress</option>
-            <option value="done">done</option>
-          </select>
-        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-event')">Batal</button>
