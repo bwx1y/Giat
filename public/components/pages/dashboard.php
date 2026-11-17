@@ -1,67 +1,46 @@
 <?php
-global $applicationDb;
-
 $dashSearch = $_GET['dash_search'] ?? '';
 $dashStatus = $_GET['dash_status'] ?? '';
 
-$dashFilters = [];
-if (!empty($dashSearch)) {
-    $dashFilters[] = [
-        'key' => 'search',
-        'query' => 'title ILIKE :search',
-        'value' => "%$dashSearch%",
-    ];
+$hadSearch = array_key_exists('search', $_GET);
+$previousSearch = $_GET['search'] ?? null;
+$hadStatus = array_key_exists('status', $_GET);
+$previousStatus = $_GET['status'] ?? null;
+
+$_GET['search'] = $dashSearch;
+$_GET['status'] = $dashStatus;
+require __DIR__ . '/../../admin/index.php';
+
+if ($hadSearch) {
+    $_GET['search'] = $previousSearch;
+} else {
+    unset($_GET['search']);
 }
-if (!empty($dashStatus)) {
-    $dashFilters[] = [
-        'key' => 'status',
-        'query' => 'status = :status',
-        'value' => $dashStatus,
-    ];
+if ($hadStatus) {
+    $_GET['status'] = $previousStatus;
+} else {
+    unset($_GET['status']);
 }
 
-$dashEvents = [];
-try {
-    $eventStmt = queryBuilder(table: 'vw_event', filters: $dashFilters, size: 50, page: 1);
-    if ($eventStmt) {
-        $dashEvents = $eventStmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-} catch (\Throwable $e) {
-    $dashEvents = [];
-}
-
+$dashEvents = $eventsResult;
 $dashTotalEvents = count($dashEvents);
-$dashTotalSubEvents = 0;
-foreach ($dashEvents as $ev) {
-    $dashTotalSubEvents += intval($ev['sub_event_count'] ?? 0);
-}
-
-$dashTotalMembers = 0;
-try {
-    $userStmt = queryBuilder(table: 'users', columns: ['COUNT(*) AS total'], filters: [
-        ['key' => 'active', 'query' => 'active = true', 'value' => '1'],
-        ['key' => 'deleted', 'query' => 'deleted_at IS NULL', 'value' => '1'],
-    ], limit: 1);
-    $dashTotalMembers = intval($userStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
-} catch (\Throwable $e) {}
-
-$dashAvgAttendance = 0;
-try {
-    $avgStmt = queryBuilder(table: 'vw_absent', columns: ['ROUND(AVG(status) * 100, 1) AS avg_attendance'], limit: 1);
-    $dashAvgAttendance = floatval($avgStmt->fetch(PDO::FETCH_ASSOC)['avg_attendance'] ?? 0);
-} catch (\Throwable $e) {}
-
-$dashTrend = [];
-try {
-    $trendStmt = queryBuilder(table: 'mv_attendance_trend_6_months');
-    $dashTrend = $trendStmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (\Throwable $e) {}
-
-$dashLeaderboard = [];
-try {
-    $lbStmt = $applicationDb->query("SELECT member_name, SUM(status) AS hadir, SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS absen, (SUM(status) * 3 - SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END)) AS point FROM vw_absent GROUP BY member_name ORDER BY point DESC LIMIT 5");
-    $dashLeaderboard = $lbStmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (\Throwable $e) {}
+$dashTotalSubEvents = array_reduce(
+    $dashEvents,
+    static fn (int $total, array $event): int => $total + (int) ($event['sub_event_count'] ?? 0),
+    0
+);
+$dashTotalMembers = (int) $userActive;
+$dashAvgAttendance = (float) $avgAttendanceResult;
+$dashTrend = $attendanceTrendResult;
+$dashLeaderboard = array_map(
+    static fn (array $member): array => [
+        'member_name' => $member['member_name'],
+        'hadir' => (int) $member['total_attended'],
+        'absen' => (int) $member['total_absent'],
+        'point' => (int) $member['total_points'],
+    ],
+    $leaderboardResult
+);
 
 $dashboardData = [
     'stats' => [
