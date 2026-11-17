@@ -11,7 +11,7 @@ if (!$isLoggedIn):
 else:
 ?>
 <div id="app-shell" class="d-flex min-vh-100 w-100">
-  <div id="sidebar-overlay" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;"></div>
+   <div id="sidebar-overlay" onclick="closeSidebar()"></div>
   <?php require_once __DIR__ . '/components/sidebar.php'; ?>
   <div class="d-flex flex-column flex-fill min-w-0" id="main-wrapper">
     <?php require_once __DIR__ . '/components/topbar.php'; ?>
@@ -37,6 +37,7 @@ require_once __DIR__ . '/components/toast.php';
 ?>
 <script>
   window.currentUser = <?= json_encode($currentUser) ?>;
+  window.routeParams = <?= json_encode($route_params ?? []) ?>;
 </script>
 <?php
 endif;

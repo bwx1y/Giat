@@ -177,5 +177,5 @@ function seedDummyData(PDO $pdo): void
     echo "Seeding dummy data from schema/dummy-data.sql ...\n";
     $sql = file_get_contents($file);
     $pdo->exec($sql);
-    echo "Dummy data seeded successfully (20 records per table).\n";
+    echo "Dummy data seeded successfully.\n";
 }

@@ -1,7 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../../config/session.php';
-
+global $applicationDb;
 require_login();
 $currentUser = current_user();
 if (($currentUser['role']?? '') !== 'Admin') {

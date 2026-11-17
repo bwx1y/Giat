@@ -37,7 +37,7 @@ function is_logged_in(): bool
 function require_login(): void
 {
     if (!is_logged_in()) {
-        header("Location: /login?error=Login is required");
+        header("Location: /?error=Login is required");
         exit;
     }
 }
@@ -131,4 +131,38 @@ function logout_user(): void
         );
     }
     session_destroy();
+}
+
+/**
+ * Retrieve the event record for the currently logged-in user.
+ *
+ * Checks if the user is authenticated, then queries the database for an active
+ * (non-deleted) record matching both the logged-in user ID and the specified event ID.
+ *
+ * @global PDO $applicationDb Database connection instance.
+ *
+ * @param int $eventId The ID of the event to check against.
+ *
+ * @return array|null Returns an associative array of the user event record if found,
+ *                    or null if the user is not logged in or no record exists.
+ */
+function user_role_event(int $eventId): ?array
+{
+    if (!is_logged_in()) {
+        return null;
+    }
+
+    $userId = $_SESSION['user_id'];
+    global $applicationDb;
+
+    $stmt = $applicationDb->prepare("SELECT * FROM user_events where user_id = :user AND event_id = :event AND deleted_at IS NULL LIMIT 1");
+
+    $stmt->execute(['user' => $userId, 'event' => $eventId]);
+    $userEvent = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($userEvent) {
+        return $userEvent;
+    }
+
+    return null;
 }

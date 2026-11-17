@@ -33,6 +33,7 @@ WHERE users.deleted_at IS NULL;");
 
     public function down(PDO $pdo): void
     {
-        $pdo->exec("DROP VIEW IF EXISTS vw_absent");
+        // ponytail: CASCADE drops unmigrated ad-hoc views depending on vw_absent
+        $pdo->exec("DROP VIEW IF EXISTS vw_absent CASCADE");
     }
 }

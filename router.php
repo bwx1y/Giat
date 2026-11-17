@@ -114,8 +114,47 @@ function resolveRoute(string $baseDir, string $uri): ?array {
 }
 }
 
-// 4. Resolver & Access Logger
-$resolved = resolveRoute(__DIR__ . '/public', $uri);
+// 4. Resolve UI page routes and API/file routes
+$routePath = '/' . trim($uri, '/');
+$uiPage = null;
+$uiParams = [];
+$uiRoutes = [
+    '/dashboard' => 'dashboard',
+    '/users' => 'anggota',
+    '/anggota' => 'anggota',
+    '/event' => 'event',
+    '/absensi' => 'absensi',
+    '/statistik' => 'statistik',
+    '/riwayat' => 'user-history',
+];
+
+if (isset($uiRoutes[$routePath])) {
+    $uiPage = $uiRoutes[$routePath];
+} elseif (preg_match('#^/event/([0-9]+)/subevent/([0-9]+)$#', $routePath, $matches)) {
+    $uiPage = 'subevent-detail';
+    $uiParams = [
+        'event_id' => $matches[1],
+        'subevent_id' => $matches[2],
+    ];
+} elseif (preg_match('#^/event/([0-9]+)$#', $routePath, $matches)) {
+    $uiPage = 'event-detail';
+    $uiParams = ['event_id' => $matches[1]];
+}
+
+if ($uiPage !== null) {
+    $_GET['page_view'] = $uiPage;
+    foreach ($uiParams as $key => $value) {
+        $_GET[$key] = $value;
+    }
+    $resolved = [
+        'file' => __DIR__ . '/public/index.php',
+        'params' => $uiParams,
+    ];
+} else {
+    $resolved = resolveRoute(__DIR__ . '/public', $uri);
+}
+
+// Access Logger
 $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $target = $resolved !== null ? str_replace(__DIR__ . '/', '', $resolved['file']) : '404';
@@ -124,14 +163,18 @@ write_log("$ip $method $uri -> $target", 'INFO');
 // 5. Role & Auth Guard
 $cleanPath = '/' . trim($uri, '/');
 
-//if ($cleanPath === '/login' && is_logged_in()) {
-//    header("Location: " . (has_role('Admin') ? '/admin/event' : '/'));
-//    exit;
-//}
-//
-//if ($cleanPath === '/admin' || str_starts_with($cleanPath, '/admin/')) {
-//    require_role('Admin');
-//}
+if ($cleanPath === '/login' && is_logged_in()) {
+    header("Location: " . (has_role('Admin') ? '/admin/event' : '/'));
+    exit;
+}
+
+if ($cleanPath === '/admin' || str_starts_with($cleanPath, '/admin/')) {
+    require_role('Admin');
+}
+
+if ($cleanPath === '/member' || str_starts_with($cleanPath, '/member/')) {
+    require_role('Member');
+}
 
 if ($resolved !== null) {
     foreach ($resolved['params'] as $key => $value) {

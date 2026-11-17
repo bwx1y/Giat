@@ -32,8 +32,9 @@ if ($entity && password_verify($data['password'], $entity['password'])) {
     }
 
     set_user_session($entity);
-    header("Location: /");
-    exit;
+    header("location: /");
+    // echo '<pre>'; var_dump($_SESSION); echo '</pre>';
+    // exit;
 }
 
 $_SESSION['field_errors']['username'][] = 'Username atau password salah.';

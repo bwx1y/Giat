@@ -1,3 +1,8 @@
+<?php
+$_GET['page'] = $_GET['page'] ?? 1;
+$_GET['size'] = $_GET['size'] ?? 1000;
+require __DIR__ . '/../../admin/absensi/index.php';
+?>
 <div id="page-absensi" class="page">
         <div class="card">
           <div class="card-header">
@@ -14,9 +19,9 @@
             </div>
             <select class="filter-select" id="absensi-filter-event" onchange="filterAbsensiList()">
               <option value="">Semua Event Utama</option>
-              <option>Webinar Nasional 2026</option>
-              <option>Workshop UI/UX</option>
-              <option>Musyawarah Organisasi</option>
+              <?php foreach ($eventList as $event): ?>
+                <option value="<?= htmlspecialchars((string) $event['id'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($event['title'], ENT_QUOTES, 'UTF-8') ?></option>
+              <?php endforeach; ?>
             </select>
             <select class="filter-select" id="absensi-filter-status" onchange="filterAbsensiList()">
               <option value="">Semua Status</option>
@@ -24,7 +29,7 @@
               <option value="Tidak Hadir">Tidak Hadir (-1)</option>
             </select>
           </div>
-          <div class="table-wrap">
+                    <div class="table-wrap">
             <table>
               <thead>
                 <tr>
@@ -45,3 +50,6 @@
           </div>
         </div>
       </div>
+<script>
+  window.dbAttendance = <?= json_encode($result) ?>;
+</script>
