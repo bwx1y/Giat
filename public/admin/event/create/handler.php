@@ -8,7 +8,7 @@ $body = validate([
     'location' => 'max:255',
     'start_date' => 'required',
     'end_date' => 'required',
-    'status' => 'in:Not started,In progress,Completed,Cancelled'
+    'status' => 'in:Not started,in progress,Done'
 ], "/admin/event/create");
 
 $sql = "INSERT INTO events (title, description, location, start_date, end_date, status) 
