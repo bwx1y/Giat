@@ -1,0 +1,50 @@
+name: giat
+
+services:
+  db:
+    build:
+      context: ./docker/postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:?}
+      POSTGRES_USER: ${DB_USER:?}
+      POSTGRES_PASSWORD: ${DB_PASS:?}
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_cron
+      - -c
+      - cron.database_name=${DB_NAME:?}
+      - -c
+      - cron.host=/var/run/postgresql
+    volumes:
+      - database:/var/lib/postgresql/data
+      - ./docker/postgres/init-cron.sh:/docker-entrypoint-initdb.d/init-cron.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    image: giat-app:local
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "192.168.0.111:8080:80"
+    volumes:
+      - ./.env:/app/.env:ro
+      - sessions:/var/lib/php/sessions
+      - logs:/app/log
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  database:
+  sessions:
+  logs:

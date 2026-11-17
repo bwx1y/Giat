@@ -1,0 +1,25 @@
+{
+    auto_https off
+    frankenphp
+}
+
+:80 {
+    root * /app/public
+    encode gzip
+
+    @static {
+        path /assets/*
+        file
+        not path *.php
+    }
+
+    handle @static {
+        file_server
+    }
+
+    handle {
+        root * /app
+        rewrite * /router.php
+        php_server
+    }
+}
