@@ -108,6 +108,11 @@ if (!$meetingStmt->fetchColumn()) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Release the session lock before keeping the SSE connection open.
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+
     header('Content-Type: text/event-stream');
     header('Cache-Control: no-cache');
     header('Connection: keep-alive');
