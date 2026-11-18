@@ -10,26 +10,48 @@ function renderAdminDashboard() {
   let hasAny = false;
 
   let list = eventsData;
-  if (Array.isArray(window.dbAdminEvents) && window.dbAdminEvents.length > 0) {
+  if (Array.isArray(window.dbAdminEvents)) {
     list = window.dbAdminEvents.map(ev => {
       const match = eventsData.find(e => e.id === ev.id || e.name === ev.title);
+      const rawSubs = (Array.isArray(ev.subEvents) && ev.subEvents.length > 0)
+        ? ev.subEvents
+        : (match && Array.isArray(match.subEvents) ? match.subEvents : (ev.subEvents || []));
+
+      const formattedSubs = rawSubs.map(s => {
+        const startPart = s.start_date ? s.start_date.split(' ') : [];
+        const endPart = s.end_date ? s.end_date.split(' ') : [];
+        const dateStr = s.date || (startPart[0] ? formatDateId(startPart[0]) : '-');
+        const startT = startPart[1] ? startPart[1].slice(0, 5) : '';
+        const endT = endPart[1] ? endPart[1].slice(0, 5) : '';
+        const timeStr = s.time || (startT && endT ? `${startT} - ${endT}` : (startT || '-'));
+
+        return {
+          id: s.id,
+          name: s.name || s.title || 'Sub Event',
+          date: dateStr,
+          time: timeStr,
+          loc: s.loc || s.location || '-',
+          hadir: s.hadir !== undefined ? s.hadir : (s.present_count || 0),
+          total: s.total !== undefined ? s.total : (s.total_peserta || ev.member_count || 0),
+          status: s.status || 'Not started',
+          pic: s.pic || ''
+        };
+      });
+
       return {
         id: ev.id,
         name: ev.title || ev.name,
         desc: ev.description || ev.desc || '',
         status: ev.status || 'Active',
         totalPeserta: ev.member_count !== undefined ? parseInt(ev.member_count) : (match ? match.totalPeserta : 40),
-        subEvents: match ? match.subEvents : (ev.subEvents || [])
+        subEvents: formattedSubs
       };
     });
-  } else if (Array.isArray(window.dbAdminEvents) && window.dbAdminEvents.length === 0
-    && (window.location.search.includes('search=') || window.location.search.includes('status='))) {
-    list = [];
   }
 
   list.forEach(ev => {
     const assignedSubs = Array.isArray(ev.subEvents)
-      ? ev.subEvents.filter(s => currentRole === 'admin' || currentRole === 'superadmin' || (s.pic && s.pic.toLowerCase().includes('budi')))
+      ? ev.subEvents.filter(s => currentRole === 'admin' || currentRole === 'superadmin' || !s.pic || (s.pic && s.pic.toLowerCase().includes('budi')))
       : [];
 
     hasAny = true;
@@ -43,7 +65,8 @@ function renderAdminDashboard() {
       `;
     } else {
       assignedSubs.forEach(s => {
-        const statusCls = (s.status === 'done' || s.status === 'Finished') ? 'badge-gray' : (s.status === 'in progress' || s.status === 'Active') ? 'badge-green' : 'badge-amber';
+        const rawStatus = (s.status || '').toLowerCase();
+        const statusCls = (rawStatus === 'done' || rawStatus === 'finished') ? 'badge-gray' : (rawStatus === 'in progress' || rawStatus === 'active') ? 'badge-green' : 'badge-amber';
         subItemsHtml += `
           <div class="managed-tree-item">
             <div>
@@ -77,7 +100,7 @@ function renderAdminDashboard() {
             <span class="badge badge-blue" style="font-size:11px;">${ev.status}</span>
           </div>
           <div style="font-size:12.5px;color:var(--slate-400);margin-top:2px;">
-            ${assignedSubs.length} Sub Event Ditugaskan kepada Anda
+            ${assignedSubs.length} Sub Event
           </div>
         </div>
         <div style="display:flex;gap:8px;">
@@ -95,6 +118,6 @@ function renderAdminDashboard() {
   });
 
   if (!hasAny) {
-    container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-calendar-check"></i><p>Belum ada Event atau Sub Event yang ditugaskan kepada Anda. Klik tombol <strong>"+ Tambah Sub Event"</strong> di atas untuk membuat Sub Event baru.</p></div>`;
+    container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-calendar-check"></i><p>Belum ada Event atau Sub Event. Klik tombol <strong>"+ Tambah Sub Event"</strong> di atas untuk membuat Sub Event baru.</p></div>`;
   }
 }

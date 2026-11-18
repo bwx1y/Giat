@@ -6,7 +6,37 @@ $_GET['page'] = $_GET['page'] ?? 1;
 $_GET['size'] = $_GET['size'] ?? 50;
 
 require __DIR__ . '/../../admin/event/index.php';
-$adminEventsList = $result ?? [];
+$adminEventsList = array_values(array_filter(
+  $result ?? [],
+  static function (array $event): bool {
+    $eventRole = user_role_event((int) $event['id']);
+    return ($eventRole['role'] ?? null) === 'Admin';
+  }
+));
+
+$_savedSearch = $_GET['search'] ?? null;
+$_savedStatus = $_GET['status'] ?? null;
+$_savedPage   = $_GET['page'] ?? null;
+$_savedSize   = $_GET['size'] ?? null;
+$_savedId     = $_GET['id'] ?? null;
+
+foreach ($adminEventsList as &$evItem) {
+    $_GET['id']     = (string) $evItem['id'];
+    $_GET['search'] = null;
+    $_GET['status'] = null;
+    $_GET['page']   = 1;
+    $_GET['size']   = 100;
+
+    require __DIR__ . '/../../admin/event/[id]/meeting/index.php';
+    $evItem['subEvents'] = $meetings ?? [];
+}
+unset($evItem);
+
+$_GET['id']     = $_savedId;
+$_GET['search'] = $_savedSearch;
+$_GET['status'] = $_savedStatus;
+$_GET['page']   = $_savedPage;
+$_GET['size']   = $_savedSize;
 ?>
 <div id="page-admin-dashboard" class="page">
   <div class="page-header">
@@ -17,9 +47,6 @@ $adminEventsList = $result ?? [];
         mencetak QR Code, dan mengelola absensi.
       </p>
     </div>
-    <button class="btn btn-blue" onclick="openAddSubEventModal()">
-      <i class="fa-solid fa-plus"></i> Tambah Sub Event
-    </button>
   </div>
 
   <form method="GET" action="/dashboard" class="toolbar">

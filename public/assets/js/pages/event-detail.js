@@ -318,60 +318,49 @@ function openAddSubEventModal(targetEventId) {
     parentInput.value = currentActiveEventId;
   }
 
+  const form = document.getElementById('form-add-subevent');
+  if (form) {
+    form.action = `/event/${encodeURIComponent(currentActiveEventId)}`;
+  }
+
   document.getElementById('new-sub-name').value = '';
-  document.getElementById('new-sub-date').value = new Date().toISOString().split('T')[0];
+  const defaultStart = new Date();
+  defaultStart.setMinutes(0, 0, 0);
+  const defaultEnd = new Date(defaultStart.getTime() + 60 * 60 * 1000);
+  document.getElementById('new-sub-start').value = formatDateTimeLocal(defaultStart);
+  document.getElementById('new-sub-end').value = formatDateTimeLocal(defaultEnd);
   document.getElementById('new-sub-loc').value = 'Ruang Meeting A';
-  document.getElementById('new-sub-desc').value = '';
 
   openModal('modal-add-subevent');
 }
 
-function saveNewSubEvent() {
+function formatDateTimeLocal(date) {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 16);
+}
+
+function saveNewSubEvent(event) {
   if (currentRole === 'superadmin') {
     showToast('Super Admin tidak dapat membuat Sub Event. Hanya Admin yang berhak.', 'error');
-    return;
+    event.preventDefault();
+    return false;
+  }
+  if (currentRole !== 'admin') {
+    showToast('Hanya PIC/Admin event yang dapat menambahkan Sub Event.', 'error');
+    event.preventDefault();
+    return false;
   }
 
-  const parentInput = document.getElementById('new-sub-parent-select');
-  const parentId = (parentInput && parseInt(parentInput.value, 10)) || currentActiveEventId;
-  let ev = eventsData.find(e => e.id === parentId);
-  if (!ev && window.dbEventDetail && Number(window.dbEventDetail.id) === Number(parentId)) {
-    ev = {
-      id: Number(window.dbEventDetail.id),
-      name: window.dbEventDetail.title || 'Event Utama',
-      totalPeserta: parseInt(window.dbEventDetail.member_count) || 0,
-      subEvents: [],
-      status: window.dbEventDetail.status || 'Active'
-    };
-    eventsData.push(ev);
+  const form = document.getElementById('form-add-subevent');
+  const parentId = Number(document.getElementById('new-sub-parent-select')?.value);
+  if (!form || !Number.isInteger(parentId) || parentId <= 0) {
+    showToast('Pilih Event Utama terlebih dahulu.', 'error');
+    event.preventDefault();
+    return false;
   }
-  if (!ev) { showToast('Pilih Event Utama terlebih dahulu', 'error'); return; }
 
-  const name = document.getElementById('new-sub-name').value.trim();
-  const dateVal = document.getElementById('new-sub-date').value;
-  const timeStart = document.getElementById('new-sub-time-start').value || '19:00';
-  const timeEnd = document.getElementById('new-sub-time-end').value || '21:00';
-  const loc = document.getElementById('new-sub-loc').value.trim() || 'Ruang Meeting';
-  const picEl = document.getElementById('new-sub-pic');
-  const pic = (picEl && picEl.value) ? picEl.value : (userInfo[currentRole]?.name || 'Admin / PIC');
-  const status = document.getElementById('new-sub-status').value;
-  const desc = document.getElementById('new-sub-desc').value.trim();
-
-  if (!name) { showToast('Nama Sub Event harus diisi', 'error'); return; }
-
-  ev.subEvents.push({
-    id: Date.now(), name,
-    date: dateVal ? formatDateId(dateVal) : '18 Sep 2026',
-    time: `${timeStart} - ${timeEnd}`,
-    loc, pic, total: ev.totalPeserta || 40,
-    hadir: 0, status, desc, participants: [],
-  });
-
-  closeModal('modal-add-subevent');
-  if (currentPage === 'event-detail') renderEventDetail(ev.id);
-  if (currentPage === 'admin-dashboard') renderAdminDashboard();
-  renderDashboardStats();
-  showToast('Sub Event "' + name + '" berhasil ditambahkan ke ' + ev.name, 'success');
+  form.action = `/event/${encodeURIComponent(parentId)}`;
+  return true;
 }
 
 function editSubEventPrompt(evId, subId) {
@@ -416,51 +405,124 @@ function backToParentEvent() {
 // ---- Sub Event Detail & Absensi ----
 
 function renderSubEventDetail(evId, subId) {
-  const ev = eventsData.find(e => e.id === evId);
-  if (!ev) return;
-  const sub = ev.subEvents.find(s => s.id === subId);
-  if (!sub) return;
+  let parentName = '';
+  let subName = '';
+  let dateStr = '';
+  let timeStr = '';
+  let locStr = '';
+  let picStr = 'Budi Santoso';
+  let statusStr = 'Not started';
+  let total = 0;
+  let hadir = 0;
+  let absen = 0;
+  let pct = 0;
+  let participants = null;
 
-  document.getElementById('sub-bc-parent').textContent = ev.name;
-  document.getElementById('sub-bc-current').textContent = sub.name;
-  document.getElementById('sub-info-parent').textContent = ev.name;
-  document.getElementById('sub-info-title').textContent = sub.name;
-  document.getElementById('sub-info-date').textContent = sub.date;
-  document.getElementById('sub-info-time').textContent = sub.time;
-  document.getElementById('sub-info-loc').textContent = sub.loc;
-  document.getElementById('sub-info-pic').textContent = sub.pic;
+  if (window.dbSubMeetingDetail && Number(window.dbSubMeetingDetail.id) === Number(subId)) {
+    const m = window.dbSubMeetingDetail;
+    const ev = window.dbSubEventDetail;
+    const stats = window.dbSubMeetingStats;
+
+    parentName = (ev && ev.title) ? ev.title : 'Event Utama';
+    subName = m.title || 'Sub Event';
+    dateStr = m.start_date ? formatDateId(m.start_date.split(' ')[0]) : '-';
+    timeStr = (m.start_date && m.end_date)
+      ? (m.start_date.split(' ')[1]?.slice(0, 5) || '-') + ' – ' + (m.end_date.split(' ')[1]?.slice(0, 5) || '-')
+      : '-';
+    locStr = m.location || 'Ruang Meeting';
+    statusStr = m.status || 'Not started';
+
+    if (stats) {
+      total = parseInt(stats.total_peserta) || 0;
+      hadir = parseInt(stats.hadir) || 0;
+      absen = parseInt(stats.tidak_hadir) || Math.max(0, total - hadir);
+      pct = parseInt(stats.persentase_kehadiran) || (total > 0 ? Math.round((hadir / total) * 100) : 0);
+    }
+
+    if (Array.isArray(window.dbSubParticipants)) {
+      participants = window.dbSubParticipants.map(p => ({
+        id: p.user_id,
+        name: p.name || 'Peserta',
+        div: p.div || 'Anggota',
+        status: Number(p.status) === 1 ? 'Hadir' : 'Tidak Hadir',
+        time: p.attended_at ? p.attended_at.split(' ')[1]?.slice(0, 5) || '—' : '—',
+        method: p.method || '—',
+        point: Number(p.status) === 1 ? 3 : -1,
+      }));
+    }
+  } else {
+    const ev = eventsData.find(e => e.id === evId);
+    if (!ev) return;
+    const sub = ev.subEvents.find(s => s.id === subId);
+    if (!sub) return;
+
+    parentName = ev.name;
+    subName = sub.name;
+    dateStr = sub.date;
+    timeStr = sub.time;
+    locStr = sub.loc;
+    picStr = sub.pic;
+    statusStr = sub.status;
+    total = sub.total || 40;
+    hadir = sub.hadir || 0;
+    absen = Math.max(0, total - hadir);
+    pct = total > 0 ? Math.round((hadir / total) * 100) : 0;
+    participants = sub.participants;
+  }
+
+  const subBcParent = document.getElementById('sub-bc-parent');
+  if (subBcParent) subBcParent.textContent = parentName;
+  const subBcCurrent = document.getElementById('sub-bc-current');
+  if (subBcCurrent) subBcCurrent.textContent = subName;
+  const subInfoParent = document.getElementById('sub-info-parent');
+  if (subInfoParent) subInfoParent.textContent = parentName;
+  const subInfoTitle = document.getElementById('sub-info-title');
+  if (subInfoTitle) subInfoTitle.textContent = subName;
+  const subInfoDate = document.getElementById('sub-info-date');
+  if (subInfoDate) subInfoDate.textContent = dateStr;
+  const subInfoTime = document.getElementById('sub-info-time');
+  if (subInfoTime) subInfoTime.textContent = timeStr;
+  const subInfoLoc = document.getElementById('sub-info-loc');
+  if (subInfoLoc) subInfoLoc.textContent = locStr;
+  const subInfoPic = document.getElementById('sub-info-pic');
+  if (subInfoPic) subInfoPic.textContent = picStr;
 
   const statusEl = document.getElementById('sub-info-status');
-  statusEl.textContent = sub.status;
-  statusEl.className = 'badge ' + ((sub.status === 'done' || sub.status === 'Finished') ? 'badge-gray' : (sub.status === 'in progress' || sub.status === 'Active') ? 'badge-green' : 'badge-amber');
+  if (statusEl) {
+    statusEl.textContent = statusStr;
+    statusEl.className = 'badge ' + ((statusStr === 'done' || statusStr === 'Finished') ? 'badge-gray' : (statusStr === 'in progress' || statusStr === 'Active') ? 'badge-green' : 'badge-amber');
+  }
 
-  const total = sub.total || 40;
-  const hadir = sub.hadir || 0;
-  const absen = Math.max(0, total - hadir);
-  const pct = total > 0 ? Math.round((hadir / total) * 100) : 0;
+  const elTotal = document.getElementById('sub-stat-total');
+  if (elTotal) elTotal.textContent = total;
+  const elHadir = document.getElementById('sub-stat-hadir');
+  if (elHadir) elHadir.textContent = hadir;
+  const elAbsen = document.getElementById('sub-stat-absen');
+  if (elAbsen) elAbsen.textContent = absen;
+  const elPct = document.getElementById('sub-stat-pct');
+  if (elPct) elPct.textContent = pct + '%';
 
-  document.getElementById('sub-stat-total').textContent = total;
-  document.getElementById('sub-stat-hadir').textContent = hadir;
-  document.getElementById('sub-stat-absen').textContent = absen;
-  document.getElementById('sub-stat-pct').textContent = pct + '%';
-
-  renderSubParticipants(sub);
+  renderSubParticipants(participants);
 }
 
-function renderSubParticipants(sub) {
+function renderSubParticipants(pList) {
   const tbody = document.getElementById('sub-participants-tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
-  let pList = sub.participants;
   if (!pList || pList.length === 0) {
-    pList = [
-      { name: 'Andi Pratama', div: 'Divisi Teknologi', status: 'Hadir', time: '19:04', method: 'QR', point: 3 },
-      { name: 'Rizky Ramadhan', div: 'Divisi Kreatif', status: 'Hadir', time: '19:08', method: 'QR', point: 3 },
-      { name: 'Siti Aulia', div: 'Divisi Humas', status: 'Belum Hadir', time: '—', method: '—', point: 0 },
-      { name: 'Fajar Nugraha', div: 'Divisi Teknologi', status: 'Hadir', time: '19:15', method: 'Manual', point: 3 },
-      { name: 'Dina Maharani', div: 'Divisi Keuangan', status: 'Belum Hadir', time: '—', method: '—', point: 0 },
-    ];
-    sub.participants = pList;
+    if (typeof eventsData !== 'undefined') {
+      pList = [
+        { name: 'Andi Pratama', div: 'Divisi Teknologi', status: 'Hadir', time: '19:04', method: 'QR', point: 3 },
+        { name: 'Rizky Ramadhan', div: 'Divisi Kreatif', status: 'Hadir', time: '19:08', method: 'QR', point: 3 },
+        { name: 'Siti Aulia', div: 'Divisi Humas', status: 'Belum Hadir', time: '—', method: '—', point: 0 },
+        { name: 'Fajar Nugraha', div: 'Divisi Teknologi', status: 'Hadir', time: '19:15', method: 'Manual', point: 3 },
+        { name: 'Dina Maharani', div: 'Divisi Keuangan', status: 'Belum Hadir', time: '—', method: '—', point: 0 },
+      ];
+    } else {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--slate-400);">Tidak ada peserta untuk Sub Event ini.</td></tr>`;
+      return;
+    }
   }
 
   pList.forEach((p, idx) => {
@@ -468,15 +530,15 @@ function renderSubParticipants(sub) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><strong>${p.name}</strong></td>
-      <td>${p.div}</td>
+      <td>${p.div || 'Anggota'}</td>
       <td><span class="badge ${isHadir ? 'badge-green' : 'badge-red'}">${p.status}</span></td>
-      <td>${p.time}</td>
-      <td>${p.method !== '—' ? `<span class="badge badge-blue">${p.method}</span>` : '—'}</td>
+      <td>${p.time || '—'}</td>
+      <td>${p.method && p.method !== '—' ? `<span class="badge badge-blue">${p.method}</span>` : '—'}</td>
       <td><strong class="${isHadir ? 'point-positive' : 'point-negative'}">${isHadir ? '+3' : (p.status === 'Tidak Hadir' ? '-1' : '0')}</strong></td>
       <td>
         ${!isHadir
-          ? `<button class="btn btn-sm btn-green" onclick="manualAbsenSubParticipant(${idx})"><i class="fa-solid fa-check"></i> Absen Manual</button>`
-          : `<button class="action-link danger" onclick="koreksiAbsenSubParticipant(${idx})">Koreksi (Batal)</button>`
+          ? `<button class="btn btn-sm btn-green" onclick="manualAbsenSubParticipant(${idx}, ${p.id || 0})"><i class="fa-solid fa-check"></i> Absen Manual</button>`
+          : `<button class="action-link danger" onclick="koreksiAbsenSubParticipant(${idx}, ${p.id || 0})">Koreksi (Batal)</button>`
         }
       </td>
     `;
@@ -484,7 +546,21 @@ function renderSubParticipants(sub) {
   });
 }
 
-function manualAbsenSubParticipant(idx) {
+function manualAbsenSubParticipant(idx, userId) {
+  if (userId) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = window.location.pathname;
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'user_id';
+    input.value = userId;
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    return;
+  }
+
   const ev = eventsData.find(e => e.id === currentActiveEventId);
   const sub = ev ? ev.subEvents.find(s => s.id === currentActiveSubEventId) : null;
   if (!sub || !sub.participants[idx]) return;
@@ -510,7 +586,21 @@ function manualAbsenSubParticipant(idx) {
   showToast(sub.participants[idx].name + ' berhasil diabsen secara manual (+3 Point)', 'success');
 }
 
-function koreksiAbsenSubParticipant(idx) {
+function koreksiAbsenSubParticipant(idx, userId) {
+  if (userId) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = window.location.pathname;
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'user_id';
+    input.value = userId;
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    return;
+  }
+
   const ev = eventsData.find(e => e.id === currentActiveEventId);
   const sub = ev ? ev.subEvents.find(s => s.id === currentActiveSubEventId) : null;
   if (!sub || !sub.participants[idx]) return;

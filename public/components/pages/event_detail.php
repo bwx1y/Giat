@@ -17,6 +17,10 @@ $_dbEventDetail           = null;
 $_dbEventMeetings         = [];
 $_dbEventMemberCandidates = [];
 
+$_isSuperAdmin  = has_role('Admin');
+$_userEventRole = $_detailEventId > 0 ? user_role_event($_detailEventId) : null;
+$_isAdminBiasa  = !$_isSuperAdmin && (($_userEventRole['role'] ?? null) === 'Admin' || !empty($isEventAdmin));
+
 if ($_detailEventId > 0) {
     $_GET['id'] = $_detailEventId;
 
@@ -107,12 +111,16 @@ if ($_detailEventId > 0) {
                 Sub Event.</div>
             </div>
 
-            <button class="btn btn-blue" id="btn-add-subevent" onclick="openAddSubEventModal(<?= (int)$_detailEventId ?>)" style="display:none;">
-              <i class="fa-solid fa-plus"></i> Tambah Sub Event
-            </button>
-            <button class="btn btn-blue" id="btn-add-member-event" onclick="openAddEventMemberModal(<?= (int)$_detailEventId ?>)" style="display:none;">
-              <i class="fa-solid fa-user-plus"></i> Tambah Peserta
-            </button>
+            <?php if (!$_isSuperAdmin && ($_isAdminBiasa || !is_logged_in())): ?>
+              <button class="btn btn-blue" id="btn-add-subevent" onclick="openAddSubEventModal(<?= (int)$_detailEventId ?>)" <?= !is_logged_in() ? 'style="display:none;"' : '' ?>>
+                <i class="fa-solid fa-plus"></i> Tambah Sub Event
+              </button>
+            <?php endif; ?>
+            <?php if (!$_isAdminBiasa && ($_isSuperAdmin || !is_logged_in())): ?>
+              <button class="btn btn-blue" id="btn-add-member-event" onclick="openAddEventMemberModal(<?= (int)$_detailEventId ?>)" <?= !is_logged_in() ? 'style="display:none;"' : '' ?>>
+                <i class="fa-solid fa-user-plus"></i> Tambah Peserta
+              </button>
+            <?php endif; ?>
           </div>
           <div class="table-wrap">
             <table>

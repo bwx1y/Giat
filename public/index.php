@@ -31,6 +31,33 @@ $memberEventRole = $memberEventRouteId ? user_role_event((int) $memberEventRoute
 $canManageEventMembers = $memberEventRouteId
     && (has_role('Admin') || ($memberEventRole['role'] ?? null) === 'Admin');
 
+if (
+    $memberEventRouteId
+    && $_SERVER['REQUEST_METHOD'] === 'POST'
+    && ($_POST['meeting_action'] ?? '') === 'create'
+) {
+    if (($memberEventRole['role'] ?? null) !== 'Admin') {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+
+    $_GET['id'] = (string) $memberEventRouteId;
+    $handlerLocation = '/admin/event/' . $memberEventRouteId . '/meeting';
+    $eventDetailLocation = '/event/' . $memberEventRouteId;
+
+    header_register_callback(static function () use ($handlerLocation, $eventDetailLocation): void {
+        foreach (headers_list() as $header) {
+            if (preg_match('/^Location:\s*' . preg_quote($handlerLocation, '/') . '$/i', $header)) {
+                header('Location: ' . $eventDetailLocation, true, 303);
+                break;
+            }
+        }
+    });
+
+    require __DIR__ . '/member/event/[id]/meeting/create/handler.php';
+    exit;
+}
+
 if ($memberEventRouteId && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['member_action'] ?? '') === 'add') {
     if (!$canManageEventMembers) {
         http_response_code(403);
