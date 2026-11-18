@@ -6,7 +6,13 @@ $_GET['page'] = $_GET['page'] ?? 1;
 $_GET['size'] = $_GET['size'] ?? 50;
 
 require __DIR__ . '/../../admin/event/index.php';
-$adminEventsList = $result ?? [];
+$adminEventsList = array_values(array_filter(
+  $result ?? [],
+  static function (array $event): bool {
+    $eventRole = user_role_event((int) $event['id']);
+    return ($eventRole['role'] ?? null) === 'Admin';
+  }
+));
 ?>
 <div id="page-admin-dashboard" class="page">
   <div class="page-header">
@@ -17,9 +23,6 @@ $adminEventsList = $result ?? [];
         mencetak QR Code, dan mengelola absensi.
       </p>
     </div>
-    <button class="btn btn-blue" onclick="openAddSubEventModal()">
-      <i class="fa-solid fa-plus"></i> Tambah Sub Event
-    </button>
   </div>
 
   <form method="GET" action="/dashboard" class="toolbar">

@@ -10,7 +10,7 @@ function renderAdminDashboard() {
   let hasAny = false;
 
   let list = eventsData;
-  if (Array.isArray(window.dbAdminEvents) && window.dbAdminEvents.length > 0) {
+  if (Array.isArray(window.dbAdminEvents)) {
     list = window.dbAdminEvents.map(ev => {
       const match = eventsData.find(e => e.id === ev.id || e.name === ev.title);
       return {
@@ -22,9 +22,6 @@ function renderAdminDashboard() {
         subEvents: match ? match.subEvents : (ev.subEvents || [])
       };
     });
-  } else if (Array.isArray(window.dbAdminEvents) && window.dbAdminEvents.length === 0
-    && (window.location.search.includes('search=') || window.location.search.includes('status='))) {
-    list = [];
   }
 
   list.forEach(ev => {
