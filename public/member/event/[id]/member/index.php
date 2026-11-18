@@ -8,9 +8,6 @@ if (empty($id)) {
     exit;
 }
 
-$currentUser = current_user();
-$currentUserId = $currentUser['id'] ?? null;
-
 $page = $_GET['page'] ?? 1;
 $size = $_GET['size'] ?? 20;
 $search = $_GET['search'] ?? null;
@@ -21,11 +18,6 @@ $filters = [
         'key' => 'event_id',
         'query' => 'ue.event_id = :event_id',
         'value' => $id,
-    ],
-    [
-        'key' => 'user_id',
-        'query' => 'ue.user_id = :user_id',
-        'value' => $currentUserId,
     ],
     [
         'key' => 'search',
