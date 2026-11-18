@@ -6,6 +6,7 @@
     </div>
     <form method="POST" id="form-add-subevent" onsubmit="return saveNewSubEvent(event)">
       <?= csrf_field() ?>
+      <input type="hidden" name="meeting_action" value="create" />
       <div class="modal-body">
         <input type="hidden" id="new-sub-parent-select" />
         <div class="field-group">
@@ -21,15 +22,6 @@
             <label>Selesai</label>
             <input type="datetime-local" name="end_date" id="new-sub-end" required />
           </div>
-        </div>
-        <div class="field-group">
-          <label>Status</label>
-          <select name="status" id="new-sub-status">
-            <option value="Not started">Not started</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Completed">Completed</option>
-            <option value="Cancelled">Cancelled</option>
-          </select>
         </div>
         <div class="field-group">
           <label>Lokasi / Ruangan</label>
