@@ -318,60 +318,50 @@ function openAddSubEventModal(targetEventId) {
     parentInput.value = currentActiveEventId;
   }
 
+  const form = document.getElementById('form-add-subevent');
+  if (form) {
+    form.action = `/admin/event/${encodeURIComponent(currentActiveEventId)}/meeting/create/handler`;
+  }
+
   document.getElementById('new-sub-name').value = '';
-  document.getElementById('new-sub-date').value = new Date().toISOString().split('T')[0];
+  const defaultStart = new Date();
+  defaultStart.setMinutes(0, 0, 0);
+  const defaultEnd = new Date(defaultStart.getTime() + 60 * 60 * 1000);
+  document.getElementById('new-sub-start').value = formatDateTimeLocal(defaultStart);
+  document.getElementById('new-sub-end').value = formatDateTimeLocal(defaultEnd);
   document.getElementById('new-sub-loc').value = 'Ruang Meeting A';
-  document.getElementById('new-sub-desc').value = '';
+  document.getElementById('new-sub-status').value = 'Not started';
 
   openModal('modal-add-subevent');
 }
 
-function saveNewSubEvent() {
+function formatDateTimeLocal(date) {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 16);
+}
+
+function saveNewSubEvent(event) {
   if (currentRole === 'superadmin') {
     showToast('Super Admin tidak dapat membuat Sub Event. Hanya Admin yang berhak.', 'error');
-    return;
+    event.preventDefault();
+    return false;
+  }
+  if (currentRole !== 'admin') {
+    showToast('Hanya PIC/Admin event yang dapat menambahkan Sub Event.', 'error');
+    event.preventDefault();
+    return false;
   }
 
-  const parentInput = document.getElementById('new-sub-parent-select');
-  const parentId = (parentInput && parseInt(parentInput.value, 10)) || currentActiveEventId;
-  let ev = eventsData.find(e => e.id === parentId);
-  if (!ev && window.dbEventDetail && Number(window.dbEventDetail.id) === Number(parentId)) {
-    ev = {
-      id: Number(window.dbEventDetail.id),
-      name: window.dbEventDetail.title || 'Event Utama',
-      totalPeserta: parseInt(window.dbEventDetail.member_count) || 0,
-      subEvents: [],
-      status: window.dbEventDetail.status || 'Active'
-    };
-    eventsData.push(ev);
+  const form = document.getElementById('form-add-subevent');
+  const parentId = Number(document.getElementById('new-sub-parent-select')?.value);
+  if (!form || !Number.isInteger(parentId) || parentId <= 0) {
+    showToast('Pilih Event Utama terlebih dahulu.', 'error');
+    event.preventDefault();
+    return false;
   }
-  if (!ev) { showToast('Pilih Event Utama terlebih dahulu', 'error'); return; }
 
-  const name = document.getElementById('new-sub-name').value.trim();
-  const dateVal = document.getElementById('new-sub-date').value;
-  const timeStart = document.getElementById('new-sub-time-start').value || '19:00';
-  const timeEnd = document.getElementById('new-sub-time-end').value || '21:00';
-  const loc = document.getElementById('new-sub-loc').value.trim() || 'Ruang Meeting';
-  const picEl = document.getElementById('new-sub-pic');
-  const pic = (picEl && picEl.value) ? picEl.value : (userInfo[currentRole]?.name || 'Admin / PIC');
-  const status = document.getElementById('new-sub-status').value;
-  const desc = document.getElementById('new-sub-desc').value.trim();
-
-  if (!name) { showToast('Nama Sub Event harus diisi', 'error'); return; }
-
-  ev.subEvents.push({
-    id: Date.now(), name,
-    date: dateVal ? formatDateId(dateVal) : '18 Sep 2026',
-    time: `${timeStart} - ${timeEnd}`,
-    loc, pic, total: ev.totalPeserta || 40,
-    hadir: 0, status, desc, participants: [],
-  });
-
-  closeModal('modal-add-subevent');
-  if (currentPage === 'event-detail') renderEventDetail(ev.id);
-  if (currentPage === 'admin-dashboard') renderAdminDashboard();
-  renderDashboardStats();
-  showToast('Sub Event "' + name + '" berhasil ditambahkan ke ' + ev.name, 'success');
+  form.action = `/admin/event/${encodeURIComponent(parentId)}/meeting/create/handler`;
+  return true;
 }
 
 function editSubEventPrompt(evId, subId) {
