@@ -1,0 +1,174 @@
+name: Giat CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Check and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.publish.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Build existing Dockerfile
+        run: |
+          context=$(mktemp -d "$RUNNER_TEMP/giat-build.XXXXXX")
+          git archive HEAD | tar -x -C "$context"
+          rm -f "$context/.env"
+          docker build -f "$context/Dockerfile" -t giat-ci:app "$context"
+
+      - name: Check PHP syntax
+        run: |
+          docker run --rm --entrypoint sh giat-ci:app -ec '
+            find /app -type f -name "*.php" -print0 |
+              xargs -0 -n 1 php -l
+            php -l /app/migration
+          '
+
+      - name: Start temporary PostgreSQL
+        run: |
+          docker build -t giat-ci:db docker/postgres
+          docker network create giat-ci
+          umask 077
+          CI_DB_PASSWORD=$(openssl rand -hex 24)
+          echo "::add-mask::$CI_DB_PASSWORD"
+          cat > "$RUNNER_TEMP/giat-ci.env" <<ENV
+          DB_HOST=giat-ci-db
+          DB_PORT=5432
+          DB_NAME=giat_ci
+          DB_USER=giat_ci
+          DB_PASS=$CI_DB_PASSWORD
+          JWT_SECRET=$(openssl rand -hex 32)
+          ENV
+          export POSTGRES_PASSWORD="$CI_DB_PASSWORD"
+          docker run -d --name giat-ci-db --network giat-ci \
+            -e POSTGRES_USER=giat_ci -e POSTGRES_DB=giat_ci \
+            -e POSTGRES_PASSWORD giat-ci:db postgres \
+            -c shared_preload_libraries=pg_cron \
+            -c cron.database_name=giat_ci \
+            -c cron.host=/var/run/postgresql
+          ready=false
+          for attempt in $(seq 1 60); do
+            if docker exec giat-ci-db pg_isready \
+              -h 127.0.0.1 -U giat_ci -d giat_ci; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          test "$ready" = true
+          docker exec giat-ci-db psql -U giat_ci -d giat_ci \
+            -v ON_ERROR_STOP=1 \
+            -c 'CREATE EXTENSION IF NOT EXISTS pg_cron;'
+
+      - name: Test migrations and repeatability
+        run: |
+          args=(--rm --network giat-ci
+                --env-file "$RUNNER_TEMP/giat-ci.env"
+                -v "$RUNNER_TEMP/giat-ci.env:/app/.env:ro"
+                --entrypoint php)
+          docker run "${args[@]}" giat-ci:app migration up
+          count=$(docker exec giat-ci-db psql -U giat_ci -d giat_ci -Atc \
+            "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('users','events','meetings','user_events','user_meetings');")
+          test "$count" = 5
+          jobs=$(docker exec giat-ci-db psql -U giat_ci -d giat_ci -Atc \
+            "SELECT count(*) FROM cron.job WHERE jobname IN ('refresh_attendance_trend_hourly','refresh_user_dashboard_stats_hourly');")
+          test "$jobs" = 2
+          docker run "${args[@]}" giat-ci:app migration up |
+            grep -F 'All migrations are up to date.'
+
+      - name: Publish image
+        id: publish
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}:$GITHUB_SHA"
+          printf '%s' "$GHCR_TOKEN" |
+            docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker tag giat-ci:app "$image"
+          docker push "$image"
+          pinned=$(docker image inspect "$image" \
+            --format '{{index .RepoDigests 0}}')
+          test -n "$pinned"
+          echo "image=$pinned" >> "$GITHUB_OUTPUT"
+
+      - name: Show database logs on failure
+        if: failure()
+        run: docker logs --tail 80 giat-ci-db || true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker rm -fv giat-ci-db || true
+          docker network rm giat-ci || true
+          rm -f "$RUNNER_TEMP/giat-ci.env"
+          docker logout ghcr.io || true
+
+  deploy:
+    name: Deploy production
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux, x64, giat-production]
+    timeout-minutes: 20
+    concurrency:
+      group: giat-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Check latest main commit
+        id: current
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          latest=$(curl --fail --silent --show-error \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/git/ref/heads/main" |
+            python3 -c 'import json,sys; print(json.load(sys.stdin)["object"]["sha"])')
+          if [[ "$latest" = "$GITHUB_SHA" ]]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Newer main commit exists; skipping deployment."
+          fi
+
+      - name: Registry login
+        if: steps.current.outputs.deploy == 'true'
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          config=$(mktemp -d "$RUNNER_TEMP/giat-registry.XXXXXX")
+          echo "DOCKER_CONFIG=$config" >> "$GITHUB_ENV"
+          printf '%s' "$GHCR_TOKEN" |
+            docker --config "$config" login ghcr.io \
+              -u "$GITHUB_ACTOR" --password-stdin
+
+      - name: Deploy
+        if: steps.current.outputs.deploy == 'true'
+        env:
+          GIAT_IMAGE: ${{ needs.build.outputs.image }}
+        run: /opt/giat-cicd/deploy.sh "$GIAT_IMAGE"
+
+      - name: Remove registry credentials
+        if: always()
+        run: |
+          if [[ -n "${DOCKER_CONFIG:-}" ]]; then
+            docker logout ghcr.io || true
+            rm -rf -- "$DOCKER_CONFIG"
+          fi
