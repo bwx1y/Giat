@@ -30,7 +30,7 @@ jobs:
           context=$(mktemp -d "$RUNNER_TEMP/giat-build.XXXXXX")
           git archive HEAD | tar -x -C "$context"
           rm -f "$context/.env"
-          docker build -f "$context/Dockerfile" -t giat-ci:app "$context"
+          docker build --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" --label "org.opencontainers.image.revision=$GITHUB_SHA" -f "$context/Dockerfile" -t giat-ci:app "$context"
 
       - name: Check PHP syntax
         run: |
