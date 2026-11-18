@@ -1,7 +1,27 @@
 <?php
 $_GET['page'] = $_GET['page'] ?? 1;
 $_GET['size'] = $_GET['size'] ?? 1000;
-require __DIR__ . '/../../admin/absensi/index.php';
+
+if ($isEventAdmin) {
+    ob_start();
+    require __DIR__ . '/../../member/absensi/index.php';
+    ob_end_clean();
+
+    $result = $results;
+    $eventList = [];
+    foreach ($result as $attendance) {
+        $eventId = (string) ($attendance['event_id'] ?? '');
+        if ($eventId !== '' && !isset($eventList[$eventId])) {
+            $eventList[$eventId] = [
+                'id' => $eventId,
+                'title' => $attendance['event'] ?? '',
+            ];
+        }
+    }
+    $eventList = array_values($eventList);
+} else {
+    require __DIR__ . '/../../admin/absensi/index.php';
+}
 ?>
 <div id="page-absensi" class="page">
         <div class="card">
