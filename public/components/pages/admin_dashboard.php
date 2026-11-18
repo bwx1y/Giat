@@ -13,6 +13,30 @@ $adminEventsList = array_values(array_filter(
     return ($eventRole['role'] ?? null) === 'Admin';
   }
 ));
+
+$_savedSearch = $_GET['search'] ?? null;
+$_savedStatus = $_GET['status'] ?? null;
+$_savedPage   = $_GET['page'] ?? null;
+$_savedSize   = $_GET['size'] ?? null;
+$_savedId     = $_GET['id'] ?? null;
+
+foreach ($adminEventsList as &$evItem) {
+    $_GET['id']     = (string) $evItem['id'];
+    $_GET['search'] = null;
+    $_GET['status'] = null;
+    $_GET['page']   = 1;
+    $_GET['size']   = 100;
+
+    require __DIR__ . '/../../admin/event/[id]/meeting/index.php';
+    $evItem['subEvents'] = $meetings ?? [];
+}
+unset($evItem);
+
+$_GET['id']     = $_savedId;
+$_GET['search'] = $_savedSearch;
+$_GET['status'] = $_savedStatus;
+$_GET['page']   = $_savedPage;
+$_GET['size']   = $_savedSize;
 ?>
 <div id="page-admin-dashboard" class="page">
   <div class="page-header">
