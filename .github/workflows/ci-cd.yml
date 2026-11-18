@@ -102,10 +102,21 @@ jobs:
           printf '%s' "$GHCR_TOKEN" |
             docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           docker tag giat-ci:app "$image"
-          docker push "$image"
-          pinned=$(docker image inspect "$image" \
-            --format '{{index .RepoDigests 0}}')
-          test -n "$pinned"
+          push_log="$RUNNER_TEMP/giat-push.log"
+          docker push "$image" | tee "$push_log"
+          digest=$(awk '
+            /digest: sha256:/ {
+              for (i=1; i<NF; i++) {
+                if ($i == "digest:") digest=$(i+1)
+              }
+            }
+            END {print digest}
+          ' "$push_log")
+          if [[ ! "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            echo "Digest hasil push GHCR tidak ditemukan." >&2
+            exit 1
+          fi
+          pinned="ghcr.io/${GITHUB_REPOSITORY,,}@$digest"
           echo "image=$pinned" >> "$GITHUB_OUTPUT"
 
       - name: Show database logs on failure
