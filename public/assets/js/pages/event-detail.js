@@ -503,6 +503,80 @@ function renderSubEventDetail(evId, subId) {
   if (elPct) elPct.textContent = pct + '%';
 
   renderSubParticipants(participants);
+  showManualAttendanceFlash(subId);
+}
+
+const manualAttendanceFlashStorageKey = 'manualAttendanceFlash';
+
+function parseSubEventDateTime(value) {
+  if (!value || typeof value !== 'string') return null;
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const hasTime = match[4] !== undefined && match[5] !== undefined;
+
+  if (hasTime) {
+    return new Date(year, month, day, Number(match[4]), Number(match[5]), Number(match[6] || 0), 0);
+  }
+  return new Date(year, month, day, 23, 59, 59, 999);
+}
+
+function isCurrentSubEventExpired() {
+  const activeSubId = Number(window.routeParams?.subevent_id || currentActiveSubEventId);
+
+  if (window.dbSubMeetingDetail && Number(window.dbSubMeetingDetail.id) === activeSubId) {
+    const endDate = parseSubEventDateTime(window.dbSubMeetingDetail.end_date || window.dbSubMeetingDetail.start_date);
+    return endDate ? new Date() > endDate : false;
+  }
+
+  if (typeof eventsData !== 'undefined') {
+    const ev = eventsData.find(e => Number(e.id) === Number(currentActiveEventId));
+    const sub = ev?.subEvents?.find(s => Number(s.id) === activeSubId);
+    if (sub) {
+      const endDate = parseSubEventDateTime(sub.end_date || sub.date);
+      return endDate ? new Date() > endDate : false;
+    }
+  }
+
+  return false;
+}
+
+function showManualAttendanceFlash(subId) {
+  const raw = sessionStorage.getItem(manualAttendanceFlashStorageKey);
+  if (!raw) return;
+  sessionStorage.removeItem(manualAttendanceFlashStorageKey);
+
+  try {
+    const flash = JSON.parse(raw);
+    if (Number(flash.subId) !== Number(subId)) return;
+
+    const participant = Array.isArray(window.dbSubParticipants)
+      ? window.dbSubParticipants.find(p => String(p.user_id) === String(flash.userId))
+      : null;
+
+    if (flash.action === 'absen') {
+      const isPresent = participant && Number(participant.status) === 1;
+      showToast(
+        isPresent
+          ? `${flash.name || 'Peserta'} berhasil diabsen secara manual (+3 Point)`
+          : 'Gagal mencatat absensi manual.',
+        isPresent ? 'success' : 'error',
+      );
+    } else if (flash.action === 'koreksi') {
+      const isAbsent = !participant || Number(participant.status) !== 1;
+      showToast(
+        isAbsent
+          ? 'Koreksi berhasil: status diubah menjadi Tidak Hadir (-1 Point)'
+          : 'Gagal mengoreksi status kehadiran.',
+        isAbsent ? 'info' : 'error',
+      );
+    }
+  } catch {
+    // Abaikan data flash yang tidak valid
+  }
 }
 
 function renderSubParticipants(pList) {
@@ -546,18 +620,38 @@ function renderSubParticipants(pList) {
   });
 }
 
+function submitManualAttendancePost(userId, action, participantName) {
+  const subId = Number(window.routeParams?.subevent_id || currentActiveSubEventId);
+  sessionStorage.setItem(manualAttendanceFlashStorageKey, JSON.stringify({
+    subId,
+    userId,
+    action,
+    name: participantName || 'Peserta',
+  }));
+
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = window.location.pathname;
+  const input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'user_id';
+  input.value = userId;
+  form.appendChild(input);
+  document.body.appendChild(form);
+  form.submit();
+}
+
 function manualAbsenSubParticipant(idx, userId) {
+  if (isCurrentSubEventExpired()) {
+    showToast('Sub event sudah lewat. Absensi manual tidak dapat dilakukan.', 'error');
+    return;
+  }
+
   if (userId) {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = window.location.pathname;
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'user_id';
-    input.value = userId;
-    form.appendChild(input);
-    document.body.appendChild(form);
-    form.submit();
+    const participant = Array.isArray(window.dbSubParticipants)
+      ? window.dbSubParticipants.find(p => String(p.user_id) === String(userId))
+      : null;
+    submitManualAttendancePost(userId, 'absen', participant?.name);
     return;
   }
 
@@ -587,17 +681,16 @@ function manualAbsenSubParticipant(idx, userId) {
 }
 
 function koreksiAbsenSubParticipant(idx, userId) {
+  if (isCurrentSubEventExpired()) {
+    showToast('Sub event sudah lewat. Koreksi absensi tidak dapat dilakukan.', 'error');
+    return;
+  }
+
   if (userId) {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = window.location.pathname;
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'user_id';
-    input.value = userId;
-    form.appendChild(input);
-    document.body.appendChild(form);
-    form.submit();
+    const participant = Array.isArray(window.dbSubParticipants)
+      ? window.dbSubParticipants.find(p => String(p.user_id) === String(userId))
+      : null;
+    submitManualAttendancePost(userId, 'koreksi', participant?.name);
     return;
   }
 
