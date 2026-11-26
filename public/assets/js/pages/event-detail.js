@@ -508,7 +508,7 @@ function renderSubEventDetail(evId, subId) {
 
 const manualAttendanceFlashStorageKey = 'manualAttendanceFlash';
 
-function parseSubEventDateTime(value) {
+function parseSubEventDateTime(value, isEndOfDayFallback = false) {
   if (!value || typeof value !== 'string') return null;
   const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);
   if (!match) return null;
@@ -521,27 +521,49 @@ function parseSubEventDateTime(value) {
   if (hasTime) {
     return new Date(year, month, day, Number(match[4]), Number(match[5]), Number(match[6] || 0), 0);
   }
-  return new Date(year, month, day, 23, 59, 59, 999);
+  return isEndOfDayFallback
+    ? new Date(year, month, day, 23, 59, 59, 999)
+    : new Date(year, month, day, 0, 0, 0, 0);
 }
 
-function isCurrentSubEventExpired() {
+function getCurrentSubEventSchedule() {
   const activeSubId = Number(window.routeParams?.subevent_id || currentActiveSubEventId);
 
   if (window.dbSubMeetingDetail && Number(window.dbSubMeetingDetail.id) === activeSubId) {
-    const endDate = parseSubEventDateTime(window.dbSubMeetingDetail.end_date || window.dbSubMeetingDetail.start_date);
-    return endDate ? new Date() > endDate : false;
+    return {
+      startDate: parseSubEventDateTime(window.dbSubMeetingDetail.start_date, false),
+      endDate: parseSubEventDateTime(window.dbSubMeetingDetail.end_date || window.dbSubMeetingDetail.start_date, true),
+    };
   }
 
   if (typeof eventsData !== 'undefined') {
     const ev = eventsData.find(e => Number(e.id) === Number(currentActiveEventId));
     const sub = ev?.subEvents?.find(s => Number(s.id) === activeSubId);
     if (sub) {
-      const endDate = parseSubEventDateTime(sub.end_date || sub.date);
-      return endDate ? new Date() > endDate : false;
+      return {
+        startDate: parseSubEventDateTime(sub.start_date || sub.date, false),
+        endDate: parseSubEventDateTime(sub.end_date || sub.date, true),
+      };
     }
   }
 
-  return false;
+  return { startDate: null, endDate: null };
+}
+
+function canPerformSubEventAttendance(actionLabel) {
+  const { startDate, endDate } = getCurrentSubEventSchedule();
+  const now = new Date();
+
+  if (startDate && now < startDate) {
+    showToast(`Belum saatnya absen. Sub event belum dimulai, ${actionLabel} belum dapat dilakukan.`, 'error');
+    return false;
+  }
+  if (endDate && now > endDate) {
+    showToast(`Sub event sudah lewat. ${actionLabel} tidak dapat dilakukan.`, 'error');
+    return false;
+  }
+
+  return true;
 }
 
 function showManualAttendanceFlash(subId) {
@@ -642,10 +664,7 @@ function submitManualAttendancePost(userId, action, participantName) {
 }
 
 function manualAbsenSubParticipant(idx, userId) {
-  if (isCurrentSubEventExpired()) {
-    showToast('Sub event sudah lewat. Absensi manual tidak dapat dilakukan.', 'error');
-    return;
-  }
+  if (!canPerformSubEventAttendance('absensi manual')) return;
 
   if (userId) {
     const participant = Array.isArray(window.dbSubParticipants)
@@ -681,10 +700,7 @@ function manualAbsenSubParticipant(idx, userId) {
 }
 
 function koreksiAbsenSubParticipant(idx, userId) {
-  if (isCurrentSubEventExpired()) {
-    showToast('Sub event sudah lewat. Koreksi absensi tidak dapat dilakukan.', 'error');
-    return;
-  }
+  if (!canPerformSubEventAttendance('koreksi absensi')) return;
 
   if (userId) {
     const participant = Array.isArray(window.dbSubParticipants)
