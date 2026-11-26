@@ -4,6 +4,8 @@
 
 let attendanceCameraStream = null;
 let attendanceQrDetector = null;
+let attendanceScanCanvas = null;
+let attendanceScanCtx = null;
 let attendanceScanFrame = null;
 let attendanceScanBusy = false;
 let attendanceScannerStarting = false;
@@ -117,6 +119,73 @@ function formatUserDashboardTime(value) {
   return String(value || '').slice(11, 16);
 }
 
+function hasSupportedQrDecoder() {
+  return typeof BarcodeDetector === 'function' || typeof jsQR === 'function';
+}
+
+function createAttendanceQrDetector() {
+  if (typeof BarcodeDetector !== 'function') return null;
+  try {
+    return new BarcodeDetector({ formats: ['qr_code'] });
+  } catch {
+    return null;
+  }
+}
+
+async function requestAttendanceCameraStream() {
+  try {
+    return await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: { ideal: 'environment' } },
+    });
+  } catch (error) {
+    if (error?.name === 'OverconstrainedError') {
+      return navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+    }
+    throw error;
+  }
+}
+
+async function detectAttendanceQrValue(video) {
+  if (!video || video.readyState < 2 || video.videoWidth <= 0 || video.videoHeight <= 0) {
+    return null;
+  }
+
+  if (attendanceQrDetector) {
+    try {
+      const detections = await attendanceQrDetector.detect(video);
+      return detections[0]?.rawValue || null;
+    } catch (error) {
+      if (typeof jsQR !== 'function') throw error;
+      // Fallback ke jsQR jika BarcodeDetector gagal pada runtime browser
+      attendanceQrDetector = null;
+    }
+  }
+
+  if (typeof jsQR !== 'function') return null;
+
+  const maxDimension = 720;
+  const scale = Math.min(1, maxDimension / Math.max(video.videoWidth, video.videoHeight));
+  const width = Math.max(1, Math.round(video.videoWidth * scale));
+  const height = Math.max(1, Math.round(video.videoHeight * scale));
+
+  if (!attendanceScanCanvas) {
+    attendanceScanCanvas = document.createElement('canvas');
+    attendanceScanCtx = attendanceScanCanvas.getContext('2d', { willReadFrequently: true });
+  }
+  if (!attendanceScanCtx) return null;
+
+  if (attendanceScanCanvas.width !== width || attendanceScanCanvas.height !== height) {
+    attendanceScanCanvas.width = width;
+    attendanceScanCanvas.height = height;
+  }
+
+  attendanceScanCtx.drawImage(video, 0, 0, width, height);
+  const imageData = attendanceScanCtx.getImageData(0, 0, width, height);
+  const decoded = jsQR(imageData.data, width, height, { inversionAttempts: 'attemptBoth' });
+  return decoded?.data || null;
+}
+
 async function openAttendanceQrScanner() {
   openModal('modal-scanner');
   if (attendanceCameraStream || attendanceScannerStarting) return;
@@ -130,8 +199,8 @@ async function openAttendanceQrScanner() {
     status.textContent = 'Browser tidak mendukung akses kamera. Buka aplikasi melalui HTTPS atau localhost.';
     return;
   }
-  if (typeof BarcodeDetector !== 'function') {
-    status.textContent = 'Browser belum mendukung pemindaian QR. Gunakan Chrome atau browser terbaru.';
+  if (!hasSupportedQrDecoder()) {
+    status.textContent = 'Decoder QR belum tersedia. Muat ulang halaman atau gunakan browser terbaru.';
     return;
   }
 
@@ -141,11 +210,8 @@ async function openAttendanceQrScanner() {
   status.textContent = 'Meminta izin kamera...';
 
   try {
-    attendanceQrDetector = new BarcodeDetector({ formats: ['qr_code'] });
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: { facingMode: { ideal: 'environment' } },
-    });
+    attendanceQrDetector = createAttendanceQrDetector();
+    const stream = await requestAttendanceCameraStream();
 
     if (
       generation !== attendanceScannerGeneration
@@ -180,8 +246,7 @@ async function scanAttendanceQrFrame() {
 
   try {
     const video = document.getElementById('qr-scanner-video');
-    const detections = await attendanceQrDetector.detect(video);
-    const rawValue = detections[0]?.rawValue;
+    const rawValue = await detectAttendanceQrValue(video);
     if (rawValue && rawValue !== lastScannedQrValue) {
       lastScannedQrValue = rawValue;
       await submitAttendanceQr(rawValue);
@@ -269,6 +334,8 @@ function stopAttendanceQrScanner() {
   if (video) video.srcObject = null;
   video?.closest('.scanner-frame')?.classList.remove('has-camera');
   attendanceQrDetector = null;
+  attendanceScanCanvas = null;
+  attendanceScanCtx = null;
   attendanceScanBusy = false;
 }
 

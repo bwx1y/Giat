@@ -16,6 +16,7 @@
   <script src="/assets/js/pages/anggota.js"></script>
   <script src="/assets/js/pages/absensi.js"></script>
   <script src="/assets/js/pages/admin.js"></script>
+  <script src="/assets/js/jsQR.js"></script>
   <script src="/assets/js/pages/user.js"></script>
   <!-- Router -->
   <script src="/assets/js/router.js"></script>
