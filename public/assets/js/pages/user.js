@@ -310,8 +310,10 @@ async function submitAttendanceQr(rawValue) {
     }
 
     stopAttendanceQrScanner();
+    closeModal('modal-scanner');
     if (status) status.textContent = 'Presensi berhasil tercatat.';
     showToast('Presensi QR berhasil dicatat.', 'success');
+    setTimeout(() => window.location.reload(), 1200);
   } catch (error) {
     if (status) status.textContent = error.message || 'Presensi gagal dicatat.';
     showToast(error.message || 'Presensi gagal dicatat.', 'error');
