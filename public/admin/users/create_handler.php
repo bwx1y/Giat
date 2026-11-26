@@ -17,12 +17,15 @@ $redirectTo = $_SERVER['HTTP_REFERER'] ?? 'index.php';
 $data = validate([
     'username' => 'required|min:3|max:100',
     'full_name' => 'required|min:3|max:255',
+    'email' => 'email|max:255',
     'password' => 'required|min:6',
-    'role' => 'required|in:Admin,Member', 
+    'role' => 'required|in:Admin,Member',
 ], $redirectTo);
 
 $username = trim($data['username']);
 $fullName = trim($data['full_name']);
+$rawEmail = trim((string) ($data['email'] ?? ''));
+$email = $rawEmail !== '' ? strtolower($rawEmail) : ($username . '@giat.test');
 $password = $data['password'];
 $role = $data['role'];
 
@@ -30,8 +33,18 @@ $stmtCheck = $applicationDb->prepare("SELECT id FROM users WHERE username = :use
 $stmtCheck->execute([':username' => $username]);
 
 if ($stmtCheck->fetch()) {
-    $_SESSION['field_errors'] ['username'] [] = 'Username sudah digunakan oleh akun lain.';
-    $_SESSION['old_input'] =$data;
+    $_SESSION['field_errors']['username'][] = 'Username sudah digunakan oleh akun lain.';
+    $_SESSION['old_input'] = $data;
+    header("Location: " . $redirectTo);
+    exit;
+}
+
+$stmtEmailCheck = $applicationDb->prepare("SELECT id FROM users WHERE email = :email AND deleted_at IS NULL LIMIT 1");
+$stmtEmailCheck->execute([':email' => $email]);
+
+if ($stmtEmailCheck->fetch()) {
+    $_SESSION['field_errors']['email'][] = 'Email sudah digunakan oleh akun lain.';
+    $_SESSION['old_input'] = $data;
     header("Location: " . $redirectTo);
     exit;
 }
@@ -39,13 +52,14 @@ if ($stmtCheck->fetch()) {
 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
 $stmt = $applicationDb->prepare("
-    INSERT INTO users (username, full_name, password, role, active)
-    VALUES (:username, :full_name, :password, :role, TRUE)
+    INSERT INTO users (username, full_name, email, password, role, active)
+    VALUES (:username, :full_name, :email, :password, :role, TRUE)
 ");
 
 $stmt->execute([
     ':username' => $username,
     ':full_name' => $fullName,
+    ':email' => $email,
     ':password' => $hashedPassword,
     ':role' => $role
 ]);

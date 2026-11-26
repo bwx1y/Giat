@@ -18,22 +18,39 @@ $redirectTo = $_SERVER['HTTP_REFERER'] ?? 'index.php';
 $data = validate([
     'id'        => 'required|numeric',
     'full_name' => 'required|min:3|max:255',
+    'email'     => 'email|max:255',
     'role'      => 'required|in:Admin,Member',
     'password'  => 'min:6',
 ], $redirectTo);
 
 $id       = (int) $data['id'];
 $fullName = trim($data['full_name']);
+$rawEmail = trim((string) ($data['email'] ?? ''));
 $role     = $data['role'];
 $password = $data['password'] ?? '';
 
-$stmtCheck = $applicationDb->prepare("SELECT id FROM users WHERE id = :id AND deleted_at IS NULL LIMIT 1");
+$stmtCheck = $applicationDb->prepare("SELECT id, email FROM users WHERE id = :id AND deleted_at IS NULL LIMIT 1");
 $stmtCheck->execute([':id' => $id]);
+$existingUser = $stmtCheck->fetch(PDO::FETCH_ASSOC);
 
-if (!$stmtCheck->fetch()) {
+if (!$existingUser) {
     $_SESSION['field_errors']['id'][] = 'Pengguna tidak ditemukan.';
     header("Location: " . $redirectTo);
     exit;
+}
+
+$email = $rawEmail !== '' ? strtolower($rawEmail) : $existingUser['email'];
+
+if ($email !== null && $email !== '') {
+    $stmtEmailCheck = $applicationDb->prepare("SELECT id FROM users WHERE email = :email AND id != :id AND deleted_at IS NULL LIMIT 1");
+    $stmtEmailCheck->execute([':email' => $email, ':id' => $id]);
+
+    if ($stmtEmailCheck->fetch()) {
+        $_SESSION['field_errors']['email'][] = 'Email sudah digunakan oleh akun lain.';
+        $_SESSION['old_input'] = $data;
+        header("Location: " . $redirectTo);
+        exit;
+    }
 }
 
 if (!empty($password)) {
@@ -41,11 +58,12 @@ if (!empty($password)) {
 
     $stmt = $applicationDb->prepare("
         UPDATE users
-        SET full_name = :full_name, role = :role, password = :password
+        SET full_name = :full_name, email = :email, role = :role, password = :password
         WHERE id = :id AND deleted_at IS NULL
     ");
     $stmt->execute([
         ':full_name' => $fullName,
+        ':email'     => $email,
         ':role'      => $role,
         ':password'  => $hashedPassword,
         ':id'        => $id,
@@ -53,11 +71,12 @@ if (!empty($password)) {
 } else {
     $stmt = $applicationDb->prepare("
         UPDATE users
-        SET full_name = :full_name, role = :role
+        SET full_name = :full_name, email = :email, role = :role
         WHERE id = :id AND deleted_at IS NULL
     ");
     $stmt->execute([
         ':full_name' => $fullName,
+        ':email'     => $email,
         ':role'      => $role,
         ':id'        => $id,
     ]);

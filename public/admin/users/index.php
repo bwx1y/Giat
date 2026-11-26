@@ -10,7 +10,7 @@ if (($currentUser['role']?? '') !== 'Admin') {
 $search = trim($_GET['m_search'] ?? $_GET['search'] ?? $_GET['q'] ?? '');
 $role   = trim($_GET['m_role'] ?? $_GET['role'] ?? '');
 
-$sql = "SELECT id, username, full_name, role, active, created_at FROM users WHERE deleted_at IS NULL";
+$sql = "SELECT id, username, full_name, email, role, active, created_at FROM users WHERE deleted_at IS NULL";
 $params = [];
 
 if (in_array($role, ['Admin', 'Member'])) {
@@ -18,7 +18,7 @@ if (in_array($role, ['Admin', 'Member'])) {
     $params[':role'] = $role;
 }
 if ($search !== '') {
-    $sql .= " AND (username ILIKE :search OR full_name ILIKE :search)";
+    $sql .= " AND (username ILIKE :search OR full_name ILIKE :search OR email ILIKE :search)";
     $params[':search'] = '%' . $search . '%';
 }
 
