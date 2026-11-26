@@ -1,11 +1,10 @@
 <?php
+// perbaiki routing
 
-// 1. Auto load semua file config & helper
 require_once __DIR__ . '/config/init.php';
 
 $uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 
-// 2. Jika request ke file statis (CSS, JS, Gambar), sajikan langsung
 $file = __DIR__ . '/public' . $uri;
 if ($uri !== '/' && file_exists($file) && !is_dir($file) && pathinfo($file, PATHINFO_EXTENSION) !== 'php') {
     $mimes = [
@@ -31,7 +30,6 @@ if ($uri !== '/' && file_exists($file) && !is_dir($file) && pathinfo($file, PATH
     exit;
 }
 
-// 3. Resolver untuk clean URL dan dynamic path parameter [param]
 if (!function_exists('resolveRoute')) {
 function resolveRoute(string $baseDir, string $uri): ?array {
     $path = trim($uri, '/');
@@ -114,53 +112,23 @@ function resolveRoute(string $baseDir, string $uri): ?array {
 }
 }
 
-// 4. Resolve UI page routes and API/file routes
-$routePath = '/' . trim($uri, '/');
-$uiPage = null;
-$uiParams = [];
-$uiRoutes = [
-    '/dashboard' => 'dashboard',
-    '/users' => 'anggota',
-    '/anggota' => 'anggota',
-    '/event' => 'event',
-    '/absensi' => 'absensi',
-    '/statistik' => 'statistik',
-    '/riwayat' => 'user-history',
-];
+// Semua UI route sudah file-based via resolveRoute:
+// /dashboard                => public/dashboard/index.php
+// /users                    => public/users/index.php
+// /anggota                  => public/anggota/index.php
+// /event                    => public/event/index.php
+// /event/{id}               => public/event/[event_id]/index.php
+// /event/{id}/subevent/{id} => public/event/[event_id]/subevent/[subevent_id]/index.php
+// /absensi                  => public/absensi/index.php
+// /statistik                => public/statistik/index.php
+// /riwayat                  => public/riwayat/index.php
+$resolved = resolveRoute(__DIR__ . '/public', $uri);
 
-if (isset($uiRoutes[$routePath])) {
-    $uiPage = $uiRoutes[$routePath];
-} elseif (preg_match('#^/event/([0-9]+)/subevent/([0-9]+)$#', $routePath, $matches)) {
-    $uiPage = 'subevent-detail';
-    $uiParams = [
-        'event_id' => $matches[1],
-        'subevent_id' => $matches[2],
-    ];
-} elseif (preg_match('#^/event/([0-9]+)$#', $routePath, $matches)) {
-    $uiPage = 'event-detail';
-    $uiParams = ['event_id' => $matches[1]];
-}
-
-if ($uiPage !== null) {
-    $_GET['page_view'] = $uiPage;
-    foreach ($uiParams as $key => $value) {
-        $_GET[$key] = $value;
-    }
-    $resolved = [
-        'file' => __DIR__ . '/public/index.php',
-        'params' => $uiParams,
-    ];
-} else {
-    $resolved = resolveRoute(__DIR__ . '/public', $uri);
-}
-
-// Access Logger
 $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $target = $resolved !== null ? str_replace(__DIR__ . '/', '', $resolved['file']) : '404';
 write_log("$ip $method $uri -> $target", 'INFO');
 
-// 5. Role & Auth Guard
 $cleanPath = '/' . trim($uri, '/');
 
 if ($cleanPath === '/login' && is_logged_in()) {
