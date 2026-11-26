@@ -20,5 +20,3 @@ ORDER BY users.full_name;');
 $stmt->execute(['event_id' => $idx]);
 
 $userList = $stmt->fetchAll();
-
-//var_dump($userList);

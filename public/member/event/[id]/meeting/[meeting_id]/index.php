@@ -1,5 +1,4 @@
 <?php
-
 global $applicationDb;
 
 $eventId = (int) ($_GET['id'] ?? 0);
@@ -13,10 +12,8 @@ $eventStmt = $applicationDb->prepare("SELECT * FROM vw_event WHERE id = :id");
 $eventStmt->bindValue(':id', $eventId, PDO::PARAM_INT);
 $eventStmt->execute();
 $event = $eventStmt->fetch(PDO::FETCH_ASSOC);
-//var_dump($event);
 
 $statsStmt = $applicationDb->prepare("SELECT * FROM vw_meeting_stats WHERE meeting_id = :meeting_id");
 $statsStmt->bindValue(':meeting_id', $meetingId, PDO::PARAM_INT);
 $statsStmt->execute();
 $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
-//var_dump($stats);

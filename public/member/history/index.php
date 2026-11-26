@@ -1,5 +1,4 @@
 <?php
-
 $page = $_GET['page'] ?? 1;
 $size = $_GET['size'] ?? 10;
 
@@ -33,4 +32,3 @@ $stmt = queryBuilder(
     page: $page,
 );
 $result = $stmt->fetch();
-//var_dump($result);

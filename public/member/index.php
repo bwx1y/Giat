@@ -1,11 +1,8 @@
 <?php
-
 global $applicationDb;
 
 $userEventRole = user_role_event(1);
-//var_dump($userEventRole);
 
-// this for refresh materialized view
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $applicationDb->query("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_user_dashboard_member;");
 }
@@ -22,7 +19,6 @@ $statchStmt = queryBuilder(
     ]
 );
 $statch = $statchStmt->fetchAll();
-//var_dump($statch);
 
 $eventStmt = queryBuilder(
     table: "vw_user_event_progress",
@@ -35,4 +31,3 @@ $eventStmt = queryBuilder(
     ]
 );
 $event = $eventStmt->fetchAll();
-//var_dump($event);
